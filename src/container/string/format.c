@@ -1963,14 +1963,19 @@ _string_format_parse_argument_file_info
     // CASE: Invalid file? Y/N
     if ( !arg->valid )
     {
-        _string_append ( state->string
-                       , "\n\t{"
-                         "\n\t   File info:  Invalid file!"
-                         "\n\t   Mode:       -"
-                         "\n\t   Size:       -"
-                         "\n\t   Position:   -"
-                         "\n\t}\n"
-                       );
+        const char* src = "\n\t{"
+                          "\n\t   File info:  Invalid file!"
+                          "\n\t   Mode:       -"
+                          "\n\t   Size:       -"
+                          "\n\t   Position:   -"
+                          "\n\t}\n"
+                          ;
+        const u64 src_length = _string_length ( src );
+        _string_format_append ( &state->string
+                              , src
+                              , src_length
+                              , format_specifier
+                              );
         return string_length ( state->string ) - old_length;
     }
 
@@ -2021,7 +2026,11 @@ _string_format_parse_argument_file_info
                                         , &size_amount , size_unit
                                         , position , &position_ratio
                                         );
-    string_append ( state->string , formatted , string_length ( formatted ) );
+    _string_format_append ( &state->string
+                          , formatted
+                          , string_length ( formatted ) 
+                          , format_specifier
+                          );
     string_destroy ( formatted );
 
     return string_length ( state->string ) - old_length;
