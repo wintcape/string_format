@@ -1480,7 +1480,7 @@ _string_format_parse_next_argument
             {
                 const arg_t array_length = state->next_arg[ 1 ];
                 const arg_t array_stride = state->next_arg[ 2 ];
-                _string_format_parse_argument_array ( state , format_specifier , ( array_t* ) arg , ( u64 ) array_length , ( u64 ) array_stride );
+                _string_format_parse_argument_array ( state , format_specifier , ( void* ) arg , ( u64 ) array_length , ( u64 ) array_stride );
 
                 // Consume the arguments that were just printed.
                 _string_format_consume_next_argument ( state );
