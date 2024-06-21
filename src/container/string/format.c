@@ -370,29 +370,6 @@ __string_format
             continue;
         }
 
-        // Ignore? Y/N
-        if ( format_specifier.tag == STRING_FORMAT_SPECIFIER_IGNORE )
-        {
-            // Copy from the write position to the current read position.
-            state->copy_end = read;
-            string_append ( state->string
-                          , state->copy_start
-                          , STRING_FORMAT_COPY_SIZE ( state )
-                          );
-
-            // Append the token.
-            string_append ( state->string
-                          , STRING_FORMAT_SPECIFIER_TOKEN_IGNORE
-                          , format_specifier_token_length
-                          );
-
-            // Update the read and write position.
-            read += 2 * format_specifier_token_length;
-            state->copy_start = read;
-
-            continue;
-        }
-        
         // Copy from the write position to the current read position.
         state->copy_end = read;
         string_append ( state->string
@@ -400,12 +377,28 @@ __string_format
                       , STRING_FORMAT_COPY_SIZE ( state )
                       );
 
-        // Update the read and write position.
-        read += format_specifier.length;
-        state->copy_start = read;
+        // Ignore? Y/N
+        if ( format_specifier.tag == STRING_FORMAT_SPECIFIER_IGNORE )
+        {
+            // Update the read and write position.
+            read += 2 * format_specifier_token_length;
+            state->copy_start = read;
+
+            // Append the token.
+            string_append ( state->string
+                          , STRING_FORMAT_SPECIFIER_TOKEN_IGNORE
+                          , format_specifier_token_length
+                          );
+
+            continue;
+        }
 
         // Parse and print the next argument according to the format specifier.
         _string_format_parse_next_argument ( state , &format_specifier );
+
+        // Update the read and write position.
+        read += format_specifier.length;
+        state->copy_start = read;
     }
     
     // Copy from the write position to the end of the format string.
