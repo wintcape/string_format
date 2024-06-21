@@ -1982,7 +1982,7 @@ _string_format_parse_argument_file_info
     // Stringify file path.
     const char* path = file_path ( arg );
 
-    // Stringify file bytesize.
+    // Stringify file mode.
     const FILE_MODE mode_ = file_mode ( arg );
     const char* mode;
     if ( ( mode_ & FILE_MODE_READ ) && ( mode_ & FILE_MODE_WRITE ) )
