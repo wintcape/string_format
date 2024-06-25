@@ -1,13 +1,14 @@
 ## ( see build/Makefile to adjust build settings )
 LINUX := linux
 WINDOWS := windows
+MACOS := macos
 
 ################################################################################
 
 default:
         @echo "Please choose from the available targets:"
 		@echo
-		@echo "linux windows"
+		@echo "linux windows macos"
 		@exit 2
 
 ################################################################################
@@ -21,5 +22,11 @@ linux:
 .PHONY: windows
 windows:
 	@make -f build/$(WINDOWS).make app	
+
+################################################################################
+
+.PHONY: macos
+macos:
+	@make -f build/$(MACOS).make app	
 
 ################################################################################

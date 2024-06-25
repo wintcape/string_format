@@ -217,11 +217,11 @@ string_f64
 /**
  * @brief Character stringify utility.
  * 
- * @param c The character.
- * @return A string copy of c. 
+ * @param c The character(s).
+ * @return A string copy of c.
  */
-#define string_char(c) \
-    ( ( char[] ){ (c) , 0 } )
+#define string_char(...) \
+    ( ( char[] ){ __VA_ARGS__ , 0 } )
 
 /**
  * @brief Bytesize to string.

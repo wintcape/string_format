@@ -1,4 +1,5 @@
 /**
+ * @author Matthew Weissel (mweissel3@gatech.edu)
  * @file math/math.c
  * @brief Implementation of the math header.
  * (see math/math.h for additional details)
@@ -6,6 +7,7 @@
 #include "math/math.h"
 
 #include "core/string.h"
+
 #include "platform/platform.h"
 
 /**
@@ -22,6 +24,15 @@
 #undef exp
 #undef ln
 #undef log
+#undef sin
+#undef cos
+#undef tan
+#undef asin
+#undef acos
+#undef atan
+#undef sinh
+#undef cosh
+#undef tanh
 #undef random
 #undef random2
 #undef randomf
@@ -36,6 +47,15 @@
 #undef exp64
 #undef ln64
 #undef log64
+#undef sin64
+#undef cos64
+#undef tan64
+#undef asin64
+#undef acos64
+#undef atan64
+#undef sinh64
+#undef cosh64
+#undef tanh64
 #undef random64
 #undef random64_2
 #undef randomf64
@@ -130,6 +150,78 @@ math_log
 )
 {
     return log10f ( x );
+}
+
+f32
+math_sin
+(   f32 x
+)
+{
+    return sinf ( x );
+}
+
+f32
+math_cos
+(   f32 x
+)
+{
+    return cosf ( x );
+}
+
+f32
+math_tan
+(   f32 x
+)
+{
+    return tanf ( x );
+}
+
+f32
+math_asin
+(   f32 x
+)
+{
+    return asinf ( x );
+}
+
+f32
+math_acos
+(   f32 x
+)
+{
+    return acosf ( x );
+}
+
+f32
+math_atan
+(   f32 x
+)
+{
+    return atanf ( x );
+}
+
+f32
+math_sinh
+(   f32 x
+)
+{
+    return sinhf ( x );
+}
+
+f32
+math_cosh
+(   f32 x
+)
+{
+    return coshf ( x );
+}
+
+f32
+math_tanh
+(   f32 x
+)
+{
+    return tanhf ( x );
 }
 
 i32
@@ -252,6 +344,78 @@ math_log_64
 )
 {
     return log10 ( x );
+}
+
+f64
+math_sin_64
+(   f64 x
+)
+{
+    return sin ( x );
+}
+
+f64
+math_cos_64
+(   f64 x
+)
+{
+    return cos ( x );
+}
+
+f64
+math_tan_64
+(   f64 x
+)
+{
+    return tan ( x );
+}
+
+f64
+math_asin_64
+(   f64 x
+)
+{
+    return asin ( x );
+}
+
+f64
+math_acos_64
+(   f64 x
+)
+{
+    return acos ( x );
+}
+
+f64
+math_atan_64
+(   f64 x
+)
+{
+    return atan ( x );
+}
+
+f64
+math_sinh_64
+(   f64 x
+)
+{
+    return sinh ( x );
+}
+
+f64
+math_cosh_64
+(   f64 x
+)
+{
+    return cosh ( x );
+}
+
+f64
+math_tanh_64
+(   f64 x
+)
+{
+    return tanh ( x );
 }
 
 i64

@@ -16,7 +16,7 @@ __string_create
 {
     if ( !initial_capacity )
     {
-        PRINTERROR ( "__string_create: Value of initial_capacity argument must be non-zero.\n" );
+        LOGERROR ( "__string_create: Value of initial_capacity argument must be non-zero." );
         return 0;
     }
     
@@ -112,9 +112,9 @@ __string_insert
     
     if ( index > old_length )
     {
-        PRINTERROR ( "__string_insert called with out of bounds index: %i (index) > %i (string length).\n"
-                   , index , string_length ( string )
-                   );
+        LOGERROR ( "__string_insert called with out of bounds index: %i (index) > %i (string length)."
+                 , index , string_length ( string )
+                 );
         return string;
     }
 
@@ -154,9 +154,9 @@ __string_remove
 
     if ( index + count > old_length )
     {
-        PRINTERROR ( "__string_remove called with illegal index or count: (index %i + count %i) %i > %i (string length).\n"
-                   , index , count , index + count , old_length
-                   );
+        LOGERROR ( "__string_remove called with illegal index or count: (index %i + count %i) %i > %i (string length)."
+                 , index , count , index + count , old_length
+                 );
         return string;
     }
 

@@ -19,11 +19,11 @@ _array_create
     {
         if ( !initial_capacity )
         {
-            PRINTERROR ( "_array_create: Value of initial_capacity argument must be non-zero.\n" );
+            LOGERROR ( "_array_create: Value of initial_capacity argument must be non-zero." );
         }
         if ( !stride )
         {
-            PRINTERROR ( "_array_create: Value of stride argument must be non-zero.\n" );
+            LOGERROR ( "_array_create: Value of stride argument must be non-zero." );
         }
         return 0;
     }
@@ -32,7 +32,7 @@ _array_create
     const u64 content_size = initial_capacity * stride;
     const u64 size = header_size + content_size;
 
-    u64* array = memory_allocate ( size );
+    u64* array = memory_allocate ( size /* , MEMORY_TAG_ARRAY */ );
     memory_clear ( array , size );
 
     array[ ARRAY_FIELD_CAPACITY ] = initial_capacity;
@@ -51,7 +51,10 @@ _array_destroy
     {
         return;
     }
-    memory_free ( ( ( u64* ) array ) - ARRAY_FIELD_COUNT );
+    memory_free ( ( ( u64* ) array ) - ARRAY_FIELD_COUNT
+                // , array_size ( array )
+                // , MEMORY_TAG_ARRAY
+                );
 }
 
 array_t*
@@ -192,7 +195,7 @@ _array_insert
     
     if ( index > length )
     {
-        PRINTERROR ( "_array_insert: Called with out of bounds index: %i (index) > %i (array length).\n"
+        LOGERROR ( "_array_insert: Called with out of bounds index: %i (index) > %i (array length)."
                    , index , length
                    );
         return array;
@@ -231,9 +234,9 @@ _array_remove
     
     if ( index > length )
     {
-        PRINTERROR ( "_array_remove: Called with out of bounds index: %i (index) >= %i (array length).\n"
-                   , index , length + 1
-                   );
+        LOGERROR ( "_array_remove: Called with out of bounds index: %i (index) >= %i (array length)."
+                 , index , length + 1
+                 );
         return array;
     }
 

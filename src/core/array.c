@@ -36,7 +36,7 @@ array_reverse
     void* swap;
     if ( !swap_ )
     {
-        swap = memory_allocate ( array_stride );
+        swap = memory_allocate ( array_stride /* , MEMORY_TAG_ARRAY */ );
     }
     else
     {
@@ -64,7 +64,7 @@ array_reverse
 
     if ( !swap_ )
     {
-        memory_free ( swap );
+        memory_free ( swap /* , array_stride , MEMORY_TAG_ARRAY */ );
     }
 
     return array;
@@ -86,7 +86,7 @@ array_shuffle
     void* swap;
     if ( !swap_ )
     {
-        swap = memory_allocate ( array_stride );
+        swap = memory_allocate ( array_stride /* , MEMORY_TAG_ARRAY */ );
     }
     else
     {
@@ -113,7 +113,7 @@ array_shuffle
 
     if ( !swap_ )
     {
-        memory_free ( swap );
+        memory_free ( swap /* , array_stride , MEMORY_TAG_ARRAY */ );
     }
 
     return array;

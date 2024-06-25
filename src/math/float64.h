@@ -1,4 +1,5 @@
 /**
+ * @author Matthew Weissel (mweissel3@gatech.edu)
  * @file math/float64.h
  * @brief Defines miscellaneous 64-bit floating point constants and operations.
  */

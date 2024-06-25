@@ -275,14 +275,14 @@ _string_format
     {
         if ( !format )
         {
-            PRINTERROR ( "_string_format: Missing argument: format.\n" );
+            LOGERROR ( "_string_format: Missing argument: format." );
         }
         if ( args.arg_count && !args.args )
         {
-            PRINTERROR ( "_string_format: Invalid argument: args. List is null, but count indicates it should contain %u element%s.\n"
-                       , args.arg_count
-                       , ( args.arg_count > 1 ) ? "s" : ""
-                       );
+            LOGERROR ( "_string_format: Invalid argument: args. List is null, but count indicates it should contain %u element%s."
+                     , args.arg_count
+                     , ( args.arg_count > 1 ) ? "s" : ""
+                     );
         }
         return string_create_from ( "" );
     }

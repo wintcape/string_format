@@ -1,14 +1,17 @@
 /**
- * @file platform/linux.c
- * @brief Implementation of the platform header for GNU/Linux-based
+ * @file platform/macos.m
+ * @brief Implementation of the platform header for macOS/OSX-based
  * operating systems.
+ *
+ * TODO: Make this not just a copy of platform/linux.c.
+ *
  * (see platform.h for additional details)
  */
 #include "platform/platform.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Begin platform layer.
-#if PLATFORM_LINUX == 1
+#if PLATFORM_MACOS == 1
 
 #include "container/string.h"
 #include "core/logger.h"

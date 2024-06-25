@@ -139,12 +139,12 @@ STRING_FORMAT_MODIFIER;
  *                             Use `\{` and `\}` to print braces.
  * - + : Always print sign. Default behavior is to print the sign only for a
  *       negative number.
- *       Works only with signed numeric format specifiers: %n, %N, %e, %i.
+ *       Works only with signed numeric format specifiers: %f, %F, %e, %i.
  * - - : Never print sign. Default behavior is to print the sign only for a
  *       negative number.
- *       Works only with signed numeric format specifiers: %n, %N, %e, %i.
+ *       Works only with signed numeric format specifiers: %f, %F, %e, %i.
  * - .<number> : Fix fractional precision to <number> decimal places.
- *               Works only with floating point format specifiers: %n, %N, %e,
+ *               Works only with floating point format specifiers: %f, %F, %e,
  *                                                                 %d.
  * - r<number> : Print integer in radix <number> format.
  *               Works only with integral format specifiers: %i, %u.

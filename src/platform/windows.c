@@ -155,7 +155,7 @@ platform_file_exists
 {
     if ( !path )
     {
-        PRINTERROR ( "platform_file_exists ("PLATFORM_STRING"): Missing argument: path (filepath to test).\n" );
+        LOGERROR ( "platform_file_exists ("PLATFORM_STRING"): Missing argument: path (filepath to test)." );
         return false;
     }
 
@@ -189,7 +189,7 @@ platform_file_open
 {
     if ( !file_ )
     {
-        PRINTERROR ( "platform_file_open ("PLATFORM_STRING"): Missing argument: file (output buffer).\n" );
+        LOGERROR ( "platform_file_open ("PLATFORM_STRING"): Missing argument: file (output buffer)." );
         return false;
     }
 
@@ -198,7 +198,7 @@ platform_file_open
 
     if ( !path )
     {
-        PRINTERROR ( "platform_file_open ("PLATFORM_STRING"): Missing argument: path (filepath to open).\n" );
+        LOGERROR ( "platform_file_open ("PLATFORM_STRING"): Missing argument: path (filepath to open)." );
         return false;
     }
 
@@ -221,7 +221,7 @@ platform_file_open
     }
     else
     {
-        PRINTERROR ( "platform_file_open ("PLATFORM_STRING"): Value of mode argument was invalid; it should be a valid file mode.\n" );
+        LOGERROR ( "platform_file_open ("PLATFORM_STRING"): Value of mode argument was invalid; it should be a valid file mode." );
         return false;
     }
 
@@ -236,7 +236,7 @@ platform_file_open
     
     if ( handle == INVALID_HANDLE_VALUE )
     {
-        platform_log_error ( "platform_file_open ("PLATFORM_STRING"): CreateFile failed on file: %s\n"
+        platform_log_error ( "platform_file_open ("PLATFORM_STRING"): CreateFile failed on file: %s"
                            , path
                            );
         return false;
@@ -246,7 +246,7 @@ platform_file_open
     LARGE_INTEGER size;
     if ( !GetFileSizeEx ( handle , &size ) )
     {
-        platform_log_error ( "platform_file_size ("PLATFORM_STRING"): GetFileSizeEx failed on file: %s\n"
+        platform_log_error ( "platform_file_size ("PLATFORM_STRING"): GetFileSizeEx failed on file: %s"
                            , path
                            );
         return false;
@@ -255,7 +255,7 @@ platform_file_open
     // Set read-write position to the start of the file.
     if ( SetFilePointer ( handle , 0 , 0 , FILE_BEGIN ) == INVALID_SET_FILE_POINTER )
     {
-        platform_log_error ( "platform_file_open ("PLATFORM_STRING"): SetFilePointer failed on file: %s\n"
+        platform_log_error ( "platform_file_open ("PLATFORM_STRING"): SetFilePointer failed on file: %s"
                            , path
                            );
         return false;
@@ -266,7 +266,7 @@ platform_file_open
     {
         if ( !SetEndOfFile ( handle ) )
         {
-            platform_log_error ( "platform_file_open ("PLATFORM_STRING"): SetEndOfFile failed on file: %s\n"
+            platform_log_error ( "platform_file_open ("PLATFORM_STRING"): SetEndOfFile failed on file: %s"
                                , path
                                );
             return false;
@@ -274,7 +274,7 @@ platform_file_open
         size.QuadPart = 0;
     }
 
-    platform_file_t* file = memory_allocate ( sizeof ( platform_file_t ) );
+    platform_file_t* file = memory_allocate ( sizeof ( platform_file_t ) /* , MEMORY_TAG_FILE */ );
     file->handle = handle;
     file->path = path;
     file->mode = mode_;
@@ -301,12 +301,12 @@ platform_file_close
     platform_file_t* file = file_->handle;
     if ( !CloseHandle ( file->handle ) )
     {
-        platform_log_error ( "platform_file_close ("PLATFORM_STRING"): CloseHandle failed on file: %s\n"
+        platform_log_error ( "platform_file_close ("PLATFORM_STRING"): CloseHandle failed on file: %s"
                            , file->path
                            );
     }
 
-    memory_free ( file );
+    memory_free ( file /* , sizeof ( platform_file_t ) , MEMORY_TAG_FILE */ );
     file_->handle = 0;
 }
 
@@ -317,7 +317,7 @@ platform_file_update
 {
     if ( !file_ )
     {
-        PRINTERROR ( "platform_file_update ("PLATFORM_STRING"): Missing argument: file.\n" );
+        LOGERROR ( "platform_file_update ("PLATFORM_STRING"): Missing argument: file." );
         return false;
     }
 
@@ -333,7 +333,7 @@ platform_file_update
     size.QuadPart = 0;
     if ( !GetFileSizeEx ( file->handle , &size ) )
     {
-        platform_log_error ( "platform_file_update ("PLATFORM_STRING"): GetFileSizeEx failed on file: %s\n"
+        platform_log_error ( "platform_file_update ("PLATFORM_STRING"): GetFileSizeEx failed on file: %s"
                            , file->path
                            );
         return false;
@@ -348,7 +348,7 @@ platform_file_update
                            , FILE_CURRENT
                            ))
     {
-        platform_log_error ( "platform_file_update ("PLATFORM_STRING"): SetFilePointerEx failed on file: %s\n"
+        platform_log_error ( "platform_file_update ("PLATFORM_STRING"): SetFilePointerEx failed on file: %s"
                            , file->path
                            );
         return false;
@@ -373,7 +373,7 @@ platform_file_path
 {
     if ( !file_ )
     {
-        PRINTERROR ( "platform_file_path ("PLATFORM_STRING"): Missing argument: file.\n" );
+        LOGERROR ( "platform_file_path ("PLATFORM_STRING"): Missing argument: file." );
         return 0;
     }
 
@@ -393,7 +393,7 @@ platform_file_mode
 {
     if ( !file_ )
     {
-        PRINTERROR ( "platform_file_mode ("PLATFORM_STRING"): Missing argument: file.\n" );
+        LOGERROR ( "platform_file_mode ("PLATFORM_STRING"): Missing argument: file." );
         return 0;
     }
 
@@ -413,7 +413,7 @@ platform_file_size
 {
     if ( !file_ )
     {
-        PRINTERROR ( "platform_file_size ("PLATFORM_STRING"): Missing argument: file.\n" );
+        LOGERROR ( "platform_file_size ("PLATFORM_STRING"): Missing argument: file." );
         return 0;
     }
 
@@ -433,7 +433,7 @@ platform_file_position_get
 {
     if ( !file_ )
     {
-        PRINTERROR ( "platform_file_position_get ("PLATFORM_STRING"): Missing argument: file.\n" );
+        LOGERROR ( "platform_file_position_get ("PLATFORM_STRING"): Missing argument: file." );
         return 0;
     }
 
@@ -454,7 +454,7 @@ platform_file_position_set
 {
     if ( !file_ )
     {
-        PRINTERROR ( "platform_file_position_set ("PLATFORM_STRING"): Missing argument: file.\n" );
+        LOGERROR ( "platform_file_position_set ("PLATFORM_STRING"): Missing argument: file." );
         return 0;
     }
 
@@ -468,7 +468,7 @@ platform_file_position_set
     // Out-of-bounds position? Y/N
     if ( position > file->size )
     {
-        PRINTERROR ( "platform_file_position_set ("PLATFORM_STRING"): The provided position is outside of the file boundary.\n" );
+        LOGERROR ( "platform_file_position_set ("PLATFORM_STRING"): The provided position is outside of the file boundary." );
         return 0;
     }
 
@@ -481,7 +481,7 @@ platform_file_position_set
                            , FILE_BEGIN
                            ))
     {
-        platform_log_error ( "platform_file_position_set ("PLATFORM_STRING"): SetFilePointerEx failed on file: %s\n"
+        platform_log_error ( "platform_file_position_set ("PLATFORM_STRING"): SetFilePointerEx failed on file: %s"
                            , file->path
                            );
         return false;
@@ -505,15 +505,15 @@ platform_file_read
     {
         if ( !file_ )
         {
-            PRINTERROR ( "platform_file_read ("PLATFORM_STRING"): Missing argument: file (file to read from).\n" );
+            LOGERROR ( "platform_file_read ("PLATFORM_STRING"): Missing argument: file (file to read from)." );
         }
         if ( !dst )
         {
-            PRINTERROR ( "platform_file_read ("PLATFORM_STRING"): Missing argument: dst (output buffer).\n" );
+            LOGERROR ( "platform_file_read ("PLATFORM_STRING"): Missing argument: dst (output buffer)." );
         }
         if ( !read )
         {
-            PRINTERROR ( "platform_file_read ("PLATFORM_STRING"): Missing argument: read (output buffer).\n" );
+            LOGERROR ( "platform_file_read ("PLATFORM_STRING"): Missing argument: read (output buffer)." );
         }
         else
         {
@@ -533,7 +533,7 @@ platform_file_read
     // Illegal mode? Y/N
     if ( !( file->mode & FILE_MODE_READ ) )
     {
-        PRINTERROR ( "platform_file_read ("PLATFORM_STRING"): The provided file is not opened for reading: %s\n"
+        LOGERROR ( "platform_file_read ("PLATFORM_STRING"): The provided file is not opened for reading: %s"
                  , file->path
                  );
         *read = 0;
@@ -555,7 +555,7 @@ platform_file_read
                         , 0
                         ))
         {
-            platform_log_error ( "platform_file_read ("PLATFORM_STRING"): ReadFile failed on file: %s\n"
+            platform_log_error ( "platform_file_read ("PLATFORM_STRING"): ReadFile failed on file: %s"
                                 , file->path
                                 );
             *read = total_bytes_read;
@@ -582,11 +582,11 @@ platform_file_read_line
     {
         if ( !file_ )
         {
-            PRINTERROR ( "platform_file_read_line ("PLATFORM_STRING"): Missing argument: file (file to read from).\n" );
+            LOGERROR ( "platform_file_read_line ("PLATFORM_STRING"): Missing argument: file (file to read from)." );
         }
         if ( !dst )
         {
-            PRINTERROR ( "platform_file_read_line ("PLATFORM_STRING"): Missing argument: dst (output buffer).\n" );
+            LOGERROR ( "platform_file_read_line ("PLATFORM_STRING"): Missing argument: dst (output buffer)." );
         }
         else
         {
@@ -606,7 +606,7 @@ platform_file_read_line
     // Illegal mode? Y/N
     if ( !( file->mode & FILE_MODE_READ ) )
     {
-        PRINTERROR ( "platform_file_read_line ("PLATFORM_STRING"): The provided file is not opened for reading: %s\n"
+        LOGERROR ( "platform_file_read_line ("PLATFORM_STRING"): The provided file is not opened for reading: %s"
                  , file->path
                  );
         *dst = 0;
@@ -636,7 +636,7 @@ platform_file_read_line
                        , 0
                        ))
         {
-            platform_log_error ( "platform_file_read_line ("PLATFORM_STRING"): ReadFile failed on file: %s\n"
+            platform_log_error ( "platform_file_read_line ("PLATFORM_STRING"): ReadFile failed on file: %s"
                                , file->path
                                );
             string_destroy ( string );
@@ -665,7 +665,7 @@ platform_file_read_line
                                        , FILE_CURRENT
                                        ))
                 {
-                    platform_log_error ( "platform_file_read_line ("PLATFORM_STRING"): SetFilePointerEx failed on file: %s\n"
+                    platform_log_error ( "platform_file_read_line ("PLATFORM_STRING"): SetFilePointerEx failed on file: %s"
                                        , file->path
                                        );
                     string_destroy ( string );
@@ -704,11 +704,11 @@ platform_file_read_all
     {
         if ( !file_ )
         {
-            PRINTERROR ( "platform_file_read_all ("PLATFORM_STRING"): Missing argument: file (file to read from).\n" );
+            LOGERROR ( "platform_file_read_all ("PLATFORM_STRING"): Missing argument: file (file to read from)." );
         }
         if ( !dst )
         {
-            PRINTERROR ( "platform_file_read_all ("PLATFORM_STRING"): Missing argument: dst (output buffer).\n" );
+            LOGERROR ( "platform_file_read_all ("PLATFORM_STRING"): Missing argument: dst (output buffer)." );
         }
         else
         {
@@ -716,7 +716,7 @@ platform_file_read_all
         }
         if ( !read )
         {
-            PRINTERROR ( "platform_file_read_all ("PLATFORM_STRING"): Missing argument: read (output buffer).\n" );
+            LOGERROR ( "platform_file_read_all ("PLATFORM_STRING"): Missing argument: read (output buffer)." );
         }
         else
         {
@@ -737,7 +737,7 @@ platform_file_read_all
     // Illegal mode? Y/N
     if ( !( file->mode & FILE_MODE_READ ) )
     {
-        PRINTERROR ( "platform_file_read_all ("PLATFORM_STRING"): The provided file is not opened for reading: %s\n"
+        LOGERROR ( "platform_file_read_all ("PLATFORM_STRING"): The provided file is not opened for reading: %s"
                  , file->path
                  );
         *dst = 0;
@@ -758,7 +758,7 @@ platform_file_read_all
     // Set host platform read-write position to the start of the file.
     if ( SetFilePointer ( file->handle , 0 , 0 , FILE_BEGIN ) == INVALID_SET_FILE_POINTER )
     {
-        platform_log_error ( "platform_file_read_all ("PLATFORM_STRING"): SetFilePointer failed on file: %s\n"
+        platform_log_error ( "platform_file_read_all ("PLATFORM_STRING"): SetFilePointer failed on file: %s"
                            , file->path
                            );
         string_free ( string );
@@ -786,7 +786,7 @@ platform_file_read_all
                        , 0
                        ))
         {
-            platform_log_error ( "platform_file_read ("PLATFORM_STRING"): ReadFile failed on file: %s\n"
+            platform_log_error ( "platform_file_read ("PLATFORM_STRING"): ReadFile failed on file: %s"
                                , file->path
                                );
             string_free ( string );
@@ -805,7 +805,7 @@ platform_file_read_all
     // Rewind host platform file position.
     if ( SetFilePointer ( file->handle , 0 , 0 , FILE_BEGIN ) == INVALID_SET_FILE_POINTER )
     {
-        platform_log_error ( "platform_file_read_all ("PLATFORM_STRING"): SetFilePointer failed on file: %s\n"
+        platform_log_error ( "platform_file_read_all ("PLATFORM_STRING"): SetFilePointer failed on file: %s"
                            , file->path
                            );
         string_free ( string );
@@ -834,15 +834,15 @@ platform_file_write
     {
         if ( !file_ )
         {
-            PRINTERROR ( "platform_file_write ("PLATFORM_STRING"): Missing argument: file (file to write to).\n" );
+            LOGERROR ( "platform_file_write ("PLATFORM_STRING"): Missing argument: file (file to write to)." );
         }
         if ( !src )
         {
-            PRINTERROR ( "platform_file_write ("PLATFORM_STRING"): Missing argument: src (content to write).\n" );
+            LOGERROR ( "platform_file_write ("PLATFORM_STRING"): Missing argument: src (content to write)." );
         }
         if ( !written )
         {
-            PRINTERROR ( "platform_file_write ("PLATFORM_STRING"): Missing argument: written (output buffer).\n" );
+            LOGERROR ( "platform_file_write ("PLATFORM_STRING"): Missing argument: written (output buffer)." );
         }
         else
         {
@@ -862,7 +862,7 @@ platform_file_write
     // Illegal mode? Y/N
     if ( !( file->mode & FILE_MODE_WRITE ) )
     {
-        PRINTERROR ( "platform_file_write ("PLATFORM_STRING"): The provided file is not opened for writing: %s\n"
+        LOGERROR ( "platform_file_write ("PLATFORM_STRING"): The provided file is not opened for writing: %s"
                  , file->path
                  );
         *written = 0;
@@ -884,7 +884,7 @@ platform_file_write
                         , 0
                         ))
         {
-            platform_log_error ( "platform_file_write ("PLATFORM_STRING"): WriteFile failed on file: %s\n"
+            platform_log_error ( "platform_file_write ("PLATFORM_STRING"): WriteFile failed on file: %s"
                                 , file->path
                                 );
             *written = total_bytes_written;
@@ -913,11 +913,11 @@ platform_file_write_line
     {
         if ( !file_ )
         {
-            PRINTERROR ( "platform_file_write_line ("PLATFORM_STRING"): Missing argument: file (file to write to).\n" );
+            LOGERROR ( "platform_file_write_line ("PLATFORM_STRING"): Missing argument: file (file to write to)." );
         }
         if ( !src )
         {
-            PRINTERROR ( "platform_file_write_line ("PLATFORM_STRING"): Missing argument: src (content to write).\n" );
+            LOGERROR ( "platform_file_write_line ("PLATFORM_STRING"): Missing argument: src (content to write)." );
         }
         return false;
     }
@@ -932,7 +932,7 @@ platform_file_write_line
     // Illegal mode? Y/N
     if ( !( file->mode & FILE_MODE_WRITE ) )
     {
-        PRINTERROR ( "platform_file_write_line ("PLATFORM_STRING"): The provided file is not opened for writing: %s\n"
+        LOGERROR ( "platform_file_write_line ("PLATFORM_STRING"): The provided file is not opened for writing: %s"
                    , file->path
                    );
         return false;
@@ -953,7 +953,7 @@ platform_file_write_line
                         , 0
                         ))
         {
-            platform_log_error ( "platform_file_write ("PLATFORM_STRING"): WriteFile failed on file: %s\n"
+            platform_log_error ( "platform_file_write ("PLATFORM_STRING"): WriteFile failed on file: %s"
                                 , file->path
                                 );
             return false;
@@ -976,7 +976,7 @@ platform_file_write_line
                     , 0
                     ))
     {
-        platform_log_error ( "platform_file_write_line ("PLATFORM_STRING"): WriteFile failed on file: %s\n"
+        platform_log_error ( "platform_file_write_line ("PLATFORM_STRING"): WriteFile failed on file: %s"
                             , file->path
                             );
         return false;
@@ -1060,17 +1060,17 @@ platform_error_message
     {
         if ( !dst )
         {
-            PRINTERROR ( "platform_error_message ("PLATFORM_STRING"): Missing argument: dst (output buffer).\n" );
+            LOGERROR ( "platform_error_message ("PLATFORM_STRING"): Missing argument: dst (output buffer)." );
         }
         if ( !dst_length )
         {
-            PRINTERROR ( "platform_error_message ("PLATFORM_STRING"): Value of dst_length argument must be non-zero." );
+            LOGERROR ( "platform_error_message ("PLATFORM_STRING"): Value of dst_length argument must be non-zero." );
         }
         return 0;
     }
     if ( strerror_s ( dst , dst_length , error ) )
     {
-        PRINTERROR ( "platform_error_message ("PLATFORM_STRING"): Failed to retrieve an error report from the host platform.\n" );
+        LOGERROR ( "platform_error_message ("PLATFORM_STRING"): Failed to retrieve an error report from the host platform." );
         return 0;
     }
     return _string_length_clamped ( dst , dst_length );

@@ -1,4 +1,5 @@
 /**
+ * @author Matthew Weissel (mweissel3@gatech.edu)
  * @file math/float.h
  * @brief Defines miscellaneous floating point constants and operations.
  */

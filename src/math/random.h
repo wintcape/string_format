@@ -1,4 +1,5 @@
 /**
+ * @author Matthew Weissel (mweissel3@gatech.edu)
  * @file math/random.h
  * @brief Random number generator functions.
  */

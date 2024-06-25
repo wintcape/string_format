@@ -11,7 +11,12 @@ memory_allocate
 (   u64 size
 )
 {
-    return platform_memory_allocate ( size );
+    void* memory = platform_memory_allocate ( size );
+    if ( memory )
+    {
+        memory_clear ( memory , size );
+    }
+    return memory;
 }
 
 void

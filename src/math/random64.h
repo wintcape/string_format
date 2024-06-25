@@ -1,4 +1,5 @@
 /**
+ * @author Matthew Weissel (mweissel3@gatech.edu)
  * @file math/random64.h
  * @brief 64-bit random number generator functions.
  */

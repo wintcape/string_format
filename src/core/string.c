@@ -390,7 +390,7 @@ to_i64
     // Whitespace-only case.
     if ( i == string_length )
     {
-        PRINTERROR ( "to_i64: Input string must be a valid i64 value (radix 10).\n" );
+        LOGERROR ( "to_i64: Input string must be a valid i64 value (radix 10)." );
         return false;
     }
 
@@ -409,7 +409,7 @@ to_i64
     // Sign-only case.
     if ( i == string_length )
     {
-        PRINTERROR ( "to_i64: Input string must be a valid i64 value (radix 10).\n" );
+        LOGERROR ( "to_i64: Input string must be a valid i64 value (radix 10)." );
         return false;
     }
 
@@ -439,7 +439,7 @@ to_i64
         }
         else
         {
-            PRINTERROR ( "to_i64: Input string must be a valid i64 value (radix 10).\n" );
+            LOGERROR ( "to_i64: Input string must be a valid i64 value (radix 10)." );
             return false;
         }
     }
@@ -465,7 +465,7 @@ to_u64
     // Whitespace-only case.
     if ( i == string_length )
     {
-        PRINTERROR ( "to_u64: Input string must be a valid u64 value (radix 10).\n" );
+        LOGERROR ( "to_u64: Input string must be a valid u64 value (radix 10)." );
         return false;
     }
 
@@ -495,7 +495,7 @@ to_u64
         }
         else
         {
-            PRINTERROR ( "to_u64: Input string must be a valid u64 value (radix 10).\n" );
+            LOGERROR ( "to_u64: Input string must be a valid u64 value (radix 10)." );
             return false;
         }
     }
@@ -529,7 +529,7 @@ to_f64
     // Whitespace-only case.
     if ( i == string_length )
     {
-        PRINTERROR ( "to_f64: Input string must be a valid f64 value (radix 10).\n" );
+        LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
         return false;
     }
 
@@ -548,7 +548,7 @@ to_f64
     // Sign-only case.
     if ( i == string_length )
     {
-        PRINTERROR ( "to_f64: Input string must be a valid f64 value (radix 10).\n" );
+        LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
         return false;
     }
 
@@ -615,7 +615,7 @@ to_f64
     const u64 integral_length = point_index;
     if ( integral_length > 19 )
     {
-        PRINTERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
+        LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
         return false;
     }
     
@@ -629,7 +629,7 @@ to_f64
         }
         else
         {
-            PRINTERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
+            LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
             return false;
         }
     }
@@ -650,7 +650,7 @@ to_f64
         }
         else
         {
-            PRINTERROR ( "to_f64: Input string must be a valid f64 value (radix 10).\n" );
+            LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
             return false;
         }
     }
@@ -673,7 +673,7 @@ string_allocate
 {
     const u64 header_size = sizeof ( u64 );
     const u64 size = header_size + content_size;
-    char* string = memory_allocate ( size );
+    char* string = memory_allocate ( size /* , MEMORY_TAG_STRING */ );
     *( ( u64* ) string ) = size;
     return ( char* )( ( ( u64 ) string ) + header_size );
 }
@@ -700,7 +700,10 @@ string_free
     }
     const u64 header_size = sizeof ( u64 );
     string = ( void* )( ( ( u64 ) string ) - header_size );
-    memory_free ( string );
+    memory_free ( string
+                // , *( ( u64* ) string )
+                // , MEMORY_TAG_STRING
+                );
 }
 
 bool
