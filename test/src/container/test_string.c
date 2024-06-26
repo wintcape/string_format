@@ -827,7 +827,7 @@ test_string_contains
     EXPECT_NOT ( string_contains ( search1 , search1_length , "search. " , _string_length ( "search. " ) , true , &index ) );
     EXPECT_NOT ( string_contains ( search2 , search2_length , string_char ( 'r' , 'l' , 'd' ) , sizeof ( string_char ( 'r' , 'l' , 'd' ) ) , false , &index ) );
     EXPECT_NOT ( string_contains ( search2 , search2_length , string_char ( 'r' , 'l' , 'd' ) , sizeof ( string_char ( 'r' , 'l' , 'd' ) ) , true , &index ) );
-    
+
     // TEST 19: string_contains succeeds in locating a substring which occurs once in the string to search.
     EXPECT ( string_contains ( search1 , search1_length , "string" , _string_length ( "string" ) , false , &index ) );
     EXPECT_EQ ( 12 , index );
@@ -2005,10 +2005,6 @@ test_string_format
     char* string_in = string_create_from ( const_string_in );
     char* really_long_string_in = _string_create ( 100 * STACK_STRING_MAX_SIZE /* MIN ( 1000 * STACK_STRING_MAX_SIZE , memory_amount_free () / 2 - KiB ( 1 ) ) */ );
     f64 float_in;
-    
-    file_t file_in;
-    file_stdin ( &file_in );
-
 
     char* string;
 
@@ -2416,9 +2412,9 @@ test_string_format
                                ;
     file_t file;
     file_stdin ( &file );
-    file_in.valid = false; // Pass it an invalid file to get an output string which can be computed at compile-time.
+    file.valid = false; // Pass it an invalid file to get an output string which can be computed at compile-time.
     float_in = -1.0;
-    string = string_format ( "%+ffile%file." , &float_in , &file_in );
+    string = string_format ( "%+ffile%file." , &float_in , &file );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "-1file" ) + _string_length ( invalid_file ) + _string_length ( "." ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "-1file" , _string_length ( "-1file" ) ) );

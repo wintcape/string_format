@@ -43,11 +43,6 @@ string_destroy
 (   string_t* string
 )
 {
-    if ( !string )
-    {
-        return;
-    }
-
     array_destroy ( string );
 }
 
@@ -302,7 +297,6 @@ __string_strip_ansi
         {
             break;
         }
-
         if ( string[ i ] != '\033' || string[ i + 1 ]  != '[' )
         {
             i += 1;

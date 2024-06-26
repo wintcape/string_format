@@ -106,7 +106,7 @@ test_run_all
                      , &clock_test_elapsed_seconds
                      , &clock_test_elapsed_fractional
                      );
-    
+
         LOGINFO ( "Executed %u of %u (%u skipped).\n\t%s\n\tResult:   %s\n\tElapsed:  %pl02u:%Pl02u:%Pl02u.%.6d / %pl02u:%Pl02u:%Pl02u.%.6d"
                 , i + 1
                 , test_count
