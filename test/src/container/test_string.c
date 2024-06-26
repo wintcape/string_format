@@ -823,6 +823,7 @@ test_string_contains
     EXPECT_EQ ( search2_length - 1 , index );
 
     // TEST 18: string_contains fails if the substring to find does not occur within the string to search.
+    // NOTE: Double-check if this is correct for the non-null-terminated case.
     EXPECT_NOT ( string_contains ( search1 , search1_length , "search. " , _string_length ( "search. " ) , false , &index ) );
     EXPECT_NOT ( string_contains ( search1 , search1_length , "search. " , _string_length ( "search. " ) , true , &index ) );
     EXPECT_NOT ( string_contains ( search2 , search2_length , string_char ( 'r' , 'l' , 'd' ) , sizeof ( string_char ( 'r' , 'l' , 'd' ) ) , false , &index ) );
@@ -837,11 +838,11 @@ test_string_contains
     EXPECT_EQ ( 12 , index );
 
     // TEST 21: string_contains succeeds in locating a substring which occurs once in the string to search and strings are not null-terminated.
-    EXPECT ( string_contains ( search2 , search2_length , "wor" , _string_length ( ( char[] ){ 'r' , 'l' , 'd' } ) , false , &index ) );
+    EXPECT ( string_contains ( search2 , search2_length , "wor" , _string_length ( "wor" ) , false , &index ) );
     EXPECT_EQ ( 6 , index );
 
     // TEST 22: string_contains (reverse) succeeds in locating a substring which occurs once in the string to search and strings are not null-terminated.
-    EXPECT ( string_contains ( search2 , search2_length , "wor" , _string_length ( ( char[] ){ 'r' , 'l' , 'd' } ) , true , &index ) );
+    EXPECT ( string_contains ( search2 , search2_length , "wor" , _string_length ( "wor" ) , true , &index ) );
     EXPECT_EQ ( 6 , index );
 
     // TEST 23: string_contains succeeds in locating the first occurrence of a substring which occurs more than once in the string to search.
