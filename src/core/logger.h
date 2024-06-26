@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file core/logger.h
  * @brief Provides an interface for an application subsystem which handles
  * the logging of runtime information.

@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file core/logger.c
  * @brief Implementation of the core/logger and core/assert headers.
  * (see core/logger.h and core/assert.h for additional details)

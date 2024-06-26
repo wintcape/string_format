@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file test/test.h
  * @brief Test management subsystem.
  */

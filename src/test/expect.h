@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file test/expect.h
  * @brief Provides predicates for evaluating test success.
  */

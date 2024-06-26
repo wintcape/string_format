@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file core/assert.h
  * @brief Defines runtime assertion behavior.
  */

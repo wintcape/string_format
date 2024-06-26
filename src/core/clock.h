@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file core/clock.h
  * @brief Provides an interface for a clock data structure.
  */

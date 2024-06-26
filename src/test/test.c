@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file test/test.c
  * @brief Implementation of test/test header.
  * (see test/test.h for additional details)

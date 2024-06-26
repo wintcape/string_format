@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file container/test_string.c
  * @brief Implementation of the container/test_string header.
  * (see container/test_string.h for additional details)

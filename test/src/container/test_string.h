@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file container/test_string.h
  * @brief Tests core/string.h and container/string.h
  * (see test/test.h, core/string.h, container/string.h for additional details)

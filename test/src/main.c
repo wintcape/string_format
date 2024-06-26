@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file main.c
  * @brief Entry point for the test suite program.
  */

@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file core/clock.c
  * @brief Implementation of the core/clock header.
  * (see core/clock.h for additional details)

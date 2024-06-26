@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file memory/test_linear_allocator.c
  * @brief Implementation of the memory/test_linear_allocator header.
  * (see memory/test_linear_allocator.h for additional details)

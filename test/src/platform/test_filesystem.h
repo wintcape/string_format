@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file platform/test_filesystem.h
  * @brief Tests platform/filesystem.h
  * (see test/test.h, platform/filesystem.h for additional details)
