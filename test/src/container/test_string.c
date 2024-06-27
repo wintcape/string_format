@@ -2636,13 +2636,13 @@ test_string_format
     EXPECT ( memory_equal ( string , "%i%s%i%s%;" , string_length ( string ) ) );
     string_destroy ( string );
 
-    // TEST 72: Padding format modifiers supports using backslash for the padding character, given that the character is not followed by an escape sequence (i.e. `\?` or `\'`).
+    // TEST 73: Padding format modifiers supports using backslash for the padding character, given that the character is not followed by an escape sequence (i.e. `\?` or `\'`).
     string = string_format ( "%Pl\\16r3i" , 10 );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "\\\\\\\\\\\\\\\\\\\\\\\\\\101" ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "\\\\\\\\\\\\\\\\\\\\\\\\\\101" , string_length ( string ) ) );
     string_destroy ( string );
-
+    
     // TODO: Add support for passing a single backslash as a multi-character
     //       padding string. Currently, this does not work because the
     //       terminating delimiter matches against its escape sequence

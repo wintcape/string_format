@@ -5,7 +5,7 @@
  */
 #include "container/string/format.h"
 #include "container/string.h"
-#include <stdio.h>
+
 #include "container/array.h"
 #include "core/logger.h"
 #include "math/math.h"
