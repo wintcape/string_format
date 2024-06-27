@@ -402,18 +402,39 @@ __string_format
                 _string_format_consume_next_argument ( state );
             }
 
-            // CASE: The invalid format specifier is a compound padding format
-            //       modifier. It acts on arbitrary substrings of the format
-            //       string; thus, the entire relevant portion of the substring
-            //       should be skipped, rather than just the format specifier
-            //       token itself. The length of the relevant section may be
-            //       read from the format specifier length (even though the
-            //       specifier was invalidated, _string_format_validate_format_specifier
-            //       still writes the length for this case to be handled as
-            //       shown below).
-            if ( format_specifier.padding.nested )
+            // Padding requested? Y/N
+            if ( format_specifier.padding.tag != STRING_FORMAT_PADDING_NONE )
             {
-                read += format_specifier.length;
+                // CASE: The invalid format specifier is a compound padding
+                //       format modifier. It acts on arbitrary substrings of the
+                //       format string; thus, the entire relevant portion of the
+                //       substring should be skipped, rather than just the
+                //       format specifier token itself. The length of the
+                //       relevant section may be read from the format specifier
+                //       length (even though the specifier was invalidated,
+                //       _string_format_validate_format_specifier still writes
+                //       the length for this case to be handled as shown below).
+                if ( format_specifier.padding.nested )
+                {
+                    read += format_specifier.length;
+                }
+
+                // CASE: The invalid format specifier is a multi-character
+                //       padding format modifier. It may contain tokens
+                //       identical to valid format specifiers; thus, the entire
+                //       relevant portion of the substring should be skipped,
+                //       rather than just the format specifier token itself. The
+                //       length of the relevant section may be read from the
+                //       format specifier length (even though the specifier was
+                //       invalidated, _string_format_validate_format_specifier
+                //       still writes the length for this case to be handled as
+                //       shown below).
+                else if ( !format_specifier.padding.wildcard_value )
+                {
+                    read += MAX ( format_specifier.length
+                                , format_specifier_token_length
+                                );
+                }
             }
 
             // CASE: The invalid format specifier is standalone; thus, only the
@@ -1160,10 +1181,12 @@ _string_format_validate_format_modifier_pad
                     }
                 }
 
-                format_specifier->padding.value.length += 1;
                 *read += 1;
             }
 
+            format_specifier->padding.value.length = *read
+                                                   - format_specifier->padding.value.value
+                                                   ;
             *read += multi_character_delimiter_token_length;
         }
     }
@@ -1181,19 +1204,6 @@ _string_format_validate_format_modifier_pad
     {
         format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
         return;
-    }
-
-    // Padding string valid? Y/N
-    for ( u64 i = 0; i < format_specifier->padding.value.length; ++i )
-    {
-        if (   !whitespace ( format_specifier->padding.value.value[ i ] )
-            && !(   format_specifier->padding.value.value[ i ] >= 32
-                 && format_specifier->padding.value.value[ i ] <= 126
-                ))
-        {
-            format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
-            return;
-        }
     }
 
     // STAGE 3: Parse width.
@@ -2612,6 +2622,5 @@ _string_format_append
             pad -= size;
         }
     }
-    
     return format_specifier->padding.width;
 }
