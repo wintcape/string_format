@@ -2495,6 +2495,7 @@ test_string_format
     EXPECT_EQ ( _string_length ( "            Hello world!:......................." ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "            Hello world!:......................." , string_length ( string ) ) );
     string_destroy ( string );
+
     // TEST 55: Fix-column-width format modifier, wildcard width, pad with whitespace.
     string = string_format ( "%Pl ?s%Pr ?s" , 4 , &"Hello world!" , 2 , &"Hello world!" );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
@@ -2551,6 +2552,95 @@ test_string_format
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "`_`16 ~ +1.5 11 %r4? ## ., Hello world!`%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%_`" ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "`_`16 ~ +1.5 11 %r4? ## ., Hello world!`%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%_`" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 63: Wildcard tokens (i.e. `?`) for the padding character may be escaped to use the token itself as the padding character.
+    string = string_format ( "%p?\\??{;}" , &"l" , 10 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "?????????;" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "?????????;" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 64: Wildcard for the padding character may be used to pass the token itself as the argument from which to parse the padding character.
+    string = string_format ( "%p???{;}" , &"l" , '?' , 10 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "?????????;" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "?????????;" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 65: Fix-width format modifier, pad with multi-character strings.
+    string = string_format ( "%Pl'-='14{} SAMPLE TEXT %Pr'=-'14{}" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "-=-=-=-=-=-=-= SAMPLE TEXT =-=-=-=-=-=-=-" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-=-=-=-=-=-=-= SAMPLE TEXT =-=-=-=-=-=-=-" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 66: Multi-character padding token (i.e. `'`) for the padding character may be escaped to use the token itself as the padding character.
+    string = string_format ( "%pl\\'4i" , 2 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "'''2" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "'''2" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 67: Multi-character padding token (i.e. `'`) may be escaped within a multi-character padding token to use the token itself within the padding string.
+    string = string_format ( "%pl'\\'Escape token\\' '30i" , 2 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "'Escape token' 'Escape token'2" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "'Escape token' 'Escape token'2" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%pr'\\'Escape token\\' \\'\\' '30i" , 2 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "2'Escape token' '' 'Escape tok" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "2'Escape token' '' 'Escape tok" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 68: Wildcard may be used within a multi-character padding token to read the value of the padding string from an argument.
+    string = string_format ( "%pl'?'30i" , &"'Escape token' " , 2 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "'Escape token' 'Escape token'2" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "'Escape token' 'Escape token'2" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 69: When a wildcard is used to parse a multi-character padding string, the multi-character escape token (i.e. `\'`) is not processed (i.e. printed verbatim).
+    string = string_format ( "%pl'?'60i" , &"\\'Escape token\\' \\'\\''' " , 2 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "\\'Escape token\\' \\'\\''' \\'Escape token\\' \\'\\''' \\'Escape to2" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "\\'Escape token\\' \\'\\''' \\'Escape token\\' \\'\\''' \\'Escape to2" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%pr'?'60i" , &"\\'Escape token\\' \\'\\''' " , 2 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "2\\'Escape token\\' \\'\\''' \\'Escape token\\' \\'\\''' \\'Escape to" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "2\\'Escape token\\' \\'\\''' \\'Escape token\\' \\'\\''' \\'Escape to" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 70: Wildcard tokens (i.e. `?`) may be escaped within a multi-character padding string to use the token itself as the padding string.
+    string = string_format ( "%p?'\\?'?{;}" , &"l" , 10 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "?????????;" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "?????????;" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 71: Multi-character padding strings containing wildcard tokens (i.e. `?`) which are **not an exact match** to the token (i.e. `?`) do not need to be escaped.
+    string = string_format ( "%p?'?\\?'?{;}" , &"l" , 10 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "?\\??\\??\\?;" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "?\\??\\??\\?;" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 72: Format specifiers contained within multi-character padding strings are printed verbatim.
+    string = string_format ( "%p?'%i%s'?{;}" , &"l" , 10 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%i%s%i%s%;" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%i%s%i%s%;" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 72: Padding format modifiers support using backslashes for the padding character, given that the character is not followed by an escape sequence (i.e. `\?` or `\'`).
+    string = string_format ( "%Pl\\16r3i" , 10 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "\\\\\\\\\\\\\\\\\\\\\\\\\\101" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "\\\\\\\\\\\\\\\\\\\\\\\\\\101" , string_length ( string ) ) );
     string_destroy ( string );
 
     // End test.

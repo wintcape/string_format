@@ -5,38 +5,93 @@
  */
 #include "container/string/format.h"
 #include "container/string.h"
-
+#include <stdio.h>
 #include "container/array.h"
 #include "core/logger.h"
 #include "math/math.h"
 #include "platform/memory.h"
 
-/** @brief Format specifier tokens. */
-static const char* format_specifiers[ STRING_FORMAT_SPECIFIER_COUNT ] = { STRING_FORMAT_SPECIFIER_TOKEN_IGNORE
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_RAW
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_INTEGER
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_SHOW_FRACTIONAL
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_ABBREVIATED
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_FRACTIONAL_ONLY
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_ADDRESS
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_CHARACTER
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_STRING
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING
-                                                                        , STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO
-                                                                        };
+/** @brief Type definition for a container to hold string token information. */
+typedef struct
+{
+    const char* value;
+    u64         length;
+}
+string_format_token_t;
 
-/** @brief Format modifier tokens. */
-static const char* format_modifiers[ STRING_FORMAT_MODIFIER_COUNT ] = { STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
-                                                                      , STRING_FORMAT_MODIFIER_TOKEN_PAD
-                                                                      , STRING_FORMAT_MODIFIER_TOKEN_PAD_MINIMUM
-                                                                      , STRING_FORMAT_MODIFIER_TOKEN_SHOW_SIGN
-                                                                      , STRING_FORMAT_MODIFIER_TOKEN_HIDE_SIGN
-                                                                      , STRING_FORMAT_MODIFIER_TOKEN_FIX_PRECISION
-                                                                      , STRING_FORMAT_MODIFIER_TOKEN_RADIX
-                                                                      , STRING_FORMAT_MODIFIER_TOKEN_ARRAY
-                                                                      , STRING_FORMAT_MODIFIER_TOKEN_RESIZABLE_ARRAY
-                                                                      };
+/** @brief Format specifier token lookup table. */
+static const
+string_format_token_t
+format_specifiers[ STRING_FORMAT_SPECIFIER_COUNT ] =
+    {
+        { .value = STRING_FORMAT_SPECIFIER_TOKEN_IGNORE
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_IGNORE ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_RAW
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_RAW ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_INTEGER
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_INTEGER ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_SHOW_FRACTIONAL
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_SHOW_FRACTIONAL ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_ABBREVIATED
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_ABBREVIATED ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_FRACTIONAL_ONLY
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_FRACTIONAL_ONLY ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_ADDRESS
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_ADDRESS ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_CHARACTER
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_CHARACTER ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_STRING
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_STRING ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING ) - 1 
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO ) - 1 
+        }
+    };
+
+/** @brief Format modifier token lookup table. */
+static const
+string_format_token_t
+format_modifiers[ STRING_FORMAT_MODIFIER_COUNT ] =
+    {
+        { .value = STRING_FORMAT_MODIFIER_TOKEN_PAD
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_PAD ) - 1
+        }
+    ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_PAD_MINIMUM
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_PAD_MINIMUM ) - 1
+        }
+    ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_SHOW_SIGN
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SHOW_SIGN ) - 1
+        }
+    ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_HIDE_SIGN
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_HIDE_SIGN ) - 1
+        }
+    ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_FIX_PRECISION
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_FIX_PRECISION ) - 1
+        }
+    ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_RADIX
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_RADIX ) - 1
+        }
+    ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_ARRAY
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_ARRAY ) - 1
+        }
+    ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_RESIZABLE_ARRAY
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_RESIZABLE_ARRAY ) - 1
+        }
+    };
 
 /** @brief Type and instance definitions for string padding tag. */
 typedef enum
@@ -52,12 +107,13 @@ typedef struct
 {
     STRING_FORMAT_PADDING   tag;
     bool                    fixed;
-    char                    value;
     u64                     width;
 
+    bool                    wildcard_value;
+    string_format_token_t   value;
+
     bool                    nested;
-    const char*             format;
-    u64                     format_length;
+    string_format_token_t   format;
 }
 string_format_padding_t;
 
@@ -442,11 +498,13 @@ _string_format_validate_format_specifier
                  );
     format_specifier->length = 0;
     format_specifier->padding.tag = STRING_FORMAT_PADDING_NONE;
-    format_specifier->padding.value = 0;
     format_specifier->padding.width = 0;
+    format_specifier->padding.wildcard_value = false;
+    format_specifier->padding.value.value = 0;
+    format_specifier->padding.value.length = 0;
     format_specifier->padding.nested = false;
-    format_specifier->padding.format = 0;
-    format_specifier->padding.format_length = 0;
+    format_specifier->padding.format.value = 0;
+    format_specifier->padding.format.length = 0;
     format_specifier->sign.tag = STRING_FORMAT_SIGN_NONE;
     format_specifier->radix.radix = STRING_FORMAT_DEFAULT_RADIX;
     format_specifier->fix_precision.tag = false;
@@ -463,13 +521,13 @@ _string_format_validate_format_specifier
         )
     {
         // CASE: No match.
-        if ( read[ 0 ] != format_specifiers[ i ][ 0 ] )
+        if ( read[ 0 ] != format_specifiers[ i ].value[ 0 ] )
         {
             continue;
         }
         if ( !memory_equal ( read + 1
-                           , format_specifiers[ i ] + 1
-                           , _string_length ( format_specifiers[ i ] ) - 1
+                           , format_specifiers[ i ].value + 1
+                           , format_specifiers[ i ].length - 1
                            ))
         {
             continue;
@@ -481,8 +539,8 @@ _string_format_validate_format_specifier
         if ( i == STRING_FORMAT_SPECIFIER_FLOATING_POINT )
         {
             if ( memory_equal ( read
-                              , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ]
-                              , _string_length ( format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ] )
+                              , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
+                              , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
                               ))
             {
                 _string_format_validate_format_specifier_file_info ( state , &read , format_specifier );
@@ -530,13 +588,13 @@ _string_format_validate_format_specifier
         for ( STRING_FORMAT_MODIFIER j = 0; j < STRING_FORMAT_MODIFIER_COUNT; ++j )
         {
             // CASE: No match.
-            if ( read[ 0 ] != format_modifiers[ j ][ 0 ] )
+            if ( read[ 0 ] != format_modifiers[ j ].value[ 0 ] )
             {
                 continue;
             }
             if ( !memory_equal ( read + 1
-                               , format_modifiers[ j ] + 1
-                               , _string_length ( format_specifiers[ j ] ) - 1
+                               , format_modifiers[ j ].value + 1
+                               , format_modifiers[ j ].length - 1
                                ))
             {
                 continue;
@@ -597,13 +655,13 @@ _string_format_validate_format_specifier
             )
         {
             // CASE: No match.
-            if ( read[ 0 ] != format_specifiers[ k ][ 0 ] )
+            if ( read[ 0 ] != format_specifiers[ k ].value[ 0 ] )
             {
                 continue;
             }
             if ( !memory_equal ( read + 1
-                               , format_specifiers[ k ] + 1
-                               , _string_length ( format_specifiers[ k ] ) - 1
+                               , format_specifiers[ k ].value + 1
+                               , format_specifiers[ k ].length - 1
                                ))
             {
                 continue;
@@ -615,8 +673,8 @@ _string_format_validate_format_specifier
             if ( k == STRING_FORMAT_SPECIFIER_FLOATING_POINT )
             {
                 if ( memory_equal ( read
-                                  , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ]
-                                  , _string_length ( format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ] )
+                                  , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
+                                  , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
                                   ))
                 {
                     _string_format_validate_format_specifier_file_info ( state , &read , format_specifier );
@@ -670,7 +728,7 @@ _string_format_validate_format_specifier_ignore
 )
 {
     format_specifier->tag = STRING_FORMAT_SPECIFIER_IGNORE;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_IGNORE );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_IGNORE ].length;
 }
 
 void
@@ -686,7 +744,7 @@ _string_format_validate_format_specifier_raw
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_RAW;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_RAW );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_RAW ].length;
 }
 
 void
@@ -702,7 +760,7 @@ _string_format_validate_format_specifier_integer
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_INTEGER;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_INTEGER );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_INTEGER ].length;
 }
 
 void
@@ -718,7 +776,7 @@ _string_format_validate_format_specifier_floating_point
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_FLOATING_POINT;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_FLOATING_POINT ].length;
 }
 
 void
@@ -734,7 +792,7 @@ _string_format_validate_format_specifier_floating_point_show_fractional
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_FLOATING_POINT_SHOW_FRACTIONAL;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_SHOW_FRACTIONAL );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_FLOATING_POINT_SHOW_FRACTIONAL ].length;
 }
 
 void
@@ -750,7 +808,7 @@ _string_format_validate_format_specifier_floating_point_abbreviated
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_FLOATING_POINT_ABBREVIATED;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_ABBREVIATED );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_FLOATING_POINT_ABBREVIATED ].length;
 }
 
 void
@@ -766,7 +824,7 @@ _string_format_validate_format_specifier_floating_point_fractional_only
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_FLOATING_POINT_FRACTIONAL_ONLY;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_FRACTIONAL_ONLY );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_FLOATING_POINT_FRACTIONAL_ONLY ].length;
 }
 
 void
@@ -782,7 +840,7 @@ _string_format_validate_format_specifier_address
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_ADDRESS;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_ADDRESS );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_ADDRESS ].length;
 }
 
 void
@@ -798,7 +856,7 @@ _string_format_validate_format_specifier_character
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_CHARACTER;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_CHARACTER );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_CHARACTER ].length;
 }
 
 void
@@ -814,7 +872,7 @@ _string_format_validate_format_specifier_string
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_STRING;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_STRING );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_STRING ].length;
 }
 
 void
@@ -830,7 +888,7 @@ _string_format_validate_format_specifier_resizable_string
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_RESIZABLE_STRING;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_RESIZABLE_STRING ].length;
 }
 
 void
@@ -846,7 +904,7 @@ _string_format_validate_format_specifier_file_info
         return;
     }
     format_specifier->tag = STRING_FORMAT_SPECIFIER_FILE_INFO;
-    *read += _string_length ( STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO );
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length;
 }
 
 void
@@ -866,7 +924,7 @@ _string_format_validate_format_modifier_pad
         return;
     }
 
-    *read += 1;
+    *read += 1; // TODO: Account for multi-character tokens.
 
     // Out of bounds? Y/N
     if ( *read + 3 >= STRING_FORMAT_READ_LIMIT ( state ) )
@@ -875,34 +933,47 @@ _string_format_validate_format_modifier_pad
         return;
     }
 
+    const char* left_token = STRING_FORMAT_MODIFIER_TOKEN_LEFT;
+    const u64 left_token_length = _string_length ( left_token );
+    const char* right_token = STRING_FORMAT_MODIFIER_TOKEN_RIGHT;
+    const u64 right_token_length = _string_length ( right_token );
+    const char* single_character_wildcard_token = STRING_FORMAT_MODIFIER_TOKEN_WILDCARD;
+    const u64 single_character_wildcard_token_length = _string_length ( single_character_wildcard_token );
+    const char* multi_character_delimiter_token = STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER;
+    const u64 multi_character_delimiter_token_length = _string_length ( multi_character_delimiter_token );
+    const char* multi_character_wildcard_token = STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
+                                                 STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER
+                                                 ;
+    const u64 multi_character_wildcard_token_length = _string_length ( multi_character_wildcard_token );
+    const char* multi_character_wildcard_escape_token = "\\"
+                                                        STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
+                                                        STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER
+                                                        ;
+    const u64 multi_character_wildcard_escape_token_length = _string_length ( multi_character_wildcard_escape_token );
     STRING_FORMAT_MODIFIER modifier;
 
     // STAGE 1: Parse alignment.
 
     // CASE: Pad left.
-    if ( memory_equal ( *read
-                      , STRING_FORMAT_MODIFIER_TOKEN_LEFT
-                      , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_LEFT )
-                      ))
+    if ( memory_equal ( *read , left_token , left_token_length ) )
     {
         format_specifier->padding.tag = STRING_FORMAT_PADDING_LEFT;
         modifier = STRING_FORMAT_MODIFIER_PAD_LEFT;
+        *read += left_token_length;
     }
 
     // CASE: Pad right.
-    else if ( memory_equal ( *read
-                           , STRING_FORMAT_MODIFIER_TOKEN_RIGHT
-                           , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_RIGHT )
-                           ))
+    else if ( memory_equal ( *read , right_token , right_token_length ) )
     {
         format_specifier->padding.tag = STRING_FORMAT_PADDING_RIGHT;
         modifier = STRING_FORMAT_MODIFIER_PAD_RIGHT;
+        *read += right_token_length;
     }
 
     // CASE: Wildcard (from argument).
     else if ( memory_equal ( *read
-                           , STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
-                           , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_WILDCARD )
+                           , single_character_wildcard_token
+                           , single_character_wildcard_token_length
                            ))
     {
         // Invalidate if no arguments remain.
@@ -919,21 +990,17 @@ _string_format_validate_format_modifier_pad
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
+        *read += single_character_wildcard_token_length;
+
         // CASE: Pad left.
-        if ( memory_equal ( alignment
-                          , STRING_FORMAT_MODIFIER_TOKEN_LEFT
-                          , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_LEFT )
-                          ))
+        if ( memory_equal ( alignment , left_token , left_token_length ) )
         {
             format_specifier->padding.tag = STRING_FORMAT_PADDING_LEFT;
             modifier = STRING_FORMAT_MODIFIER_PAD_LEFT;
         }
 
         // CASE: Pad right.
-        else if ( memory_equal ( alignment
-                               , STRING_FORMAT_MODIFIER_TOKEN_RIGHT
-                               , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_RIGHT )
-                               ))
+        else if ( memory_equal ( alignment , right_token , right_token_length ) )
         {
             format_specifier->padding.tag = STRING_FORMAT_PADDING_RIGHT;
             modifier = STRING_FORMAT_MODIFIER_PAD_RIGHT;
@@ -953,18 +1020,47 @@ _string_format_validate_format_modifier_pad
         format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
         return;
     }
-
-    *read += 1;
     
-    // STAGE 2: Parse pad character.
+    // STAGE 2: Parse pad string.
 
-    // TODO: CASE: Escape wildcard (i.e. `?`).
+    // Possible escape? Y/N
+    if ( **read == '\\' )
+    {
+        format_specifier->padding.value.length = 1;
+        *read += 1;
 
-    // CASE: Wildcard (from argument).
-    if ( memory_equal ( *read
-                      , STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
-                      , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_WILDCARD )
-                      ))
+        // CASE: Escape single-character wildcard (i.e. `?`).
+        if ( memory_equal ( *read
+                          , single_character_wildcard_token
+                          , single_character_wildcard_token_length
+                          ))
+        {
+            format_specifier->padding.value.value = "?";
+            *read += single_character_wildcard_token_length;
+        }
+
+        // CASE: Escape multi-character delimiter (i.e. `'`).
+        else if ( memory_equal ( *read
+                               , multi_character_delimiter_token
+                               , multi_character_delimiter_token_length
+                               ))
+        {
+            format_specifier->padding.value.value = "'";
+            *read += multi_character_delimiter_token_length;
+        }
+
+        // CASE: No escape (i.e. `\`).
+        else
+        {
+            format_specifier->padding.value.value = "\\";
+        }
+    }
+
+    // CASE: Wildcard (single character from argument).
+    else if ( memory_equal ( *read
+                           , single_character_wildcard_token
+                           , single_character_wildcard_token_length
+                           ))
     {
         // Invalidate if no arguments remain.
         if ( !state->args_remaining )
@@ -975,36 +1071,137 @@ _string_format_validate_format_modifier_pad
 
         // Retrieve the value of the next argument in the variadic argument list.
         // Expects an ASCII character.
-        format_specifier->padding.value = *( ( char* )( state->next_arg ) );
+        format_specifier->padding.value.value = ( ( char* )( state->next_arg ) );
+        format_specifier->padding.value.length = 1;
+        format_specifier->padding.wildcard_value = true;
 
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
+
+        *read += single_character_wildcard_token_length;
     }
 
-    // CASE: From format string.
+    // Multi-character padding? Y/N
+    else if ( memory_equal ( *read
+                           , multi_character_delimiter_token
+                           , multi_character_delimiter_token_length
+                           ))
+    {
+        *read += multi_character_delimiter_token_length;
+
+        // Out of bounds? Y/N
+        if ( *read + multi_character_delimiter_token_length + 1 >= STRING_FORMAT_READ_LIMIT ( state ) )
+        {
+            format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+            return;
+        }
+
+        // CASE: Multi-character wildcard (null-terminated string from argument).
+        if ( memory_equal ( *read
+                          , multi_character_wildcard_token
+                          , multi_character_wildcard_token_length
+                          ))
+        {
+            // Invalidate if no arguments remain.
+            if ( !state->args_remaining )
+            {
+                format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                return;
+            }
+
+            // Retrieve the value of the next argument in the variadic argument list.
+            // Expects a null-terminated string.
+            format_specifier->padding.value.value = *( ( char** )( state->next_arg ) );
+            format_specifier->padding.value.length = format_specifier->padding.value.value
+                                                   ? _string_length ( format_specifier->padding.value.value )
+                                                   : 0
+                                                   ;
+            format_specifier->padding.wildcard_value = true;
+
+            // Consume the argument that was just parsed.
+            _string_format_consume_next_argument ( state );
+
+            *read += multi_character_wildcard_token_length;
+        }
+
+        // CASE: Escape multi-character wildcard (i.e. `'?'`).
+        else if ( memory_equal ( *read
+                               , multi_character_wildcard_escape_token
+                               , multi_character_wildcard_escape_token_length
+                               ))
+        {
+            format_specifier->padding.value.value = "?";
+            format_specifier->padding.value.length = 1;
+            *read += multi_character_wildcard_escape_token_length;
+        }
+
+        else
+        {
+            format_specifier->padding.value.value = *read;
+
+            // Validate that the padding string terminates.
+            while (   format_specifier->padding.value.length < STRING_FORMAT_MAX_PAD_WIDTH
+                   && *read < STRING_FORMAT_READ_LIMIT ( state )
+                  )
+            {
+                // Terminator encountered? Y/N
+                if ( **read == multi_character_delimiter_token[ 0 ] )
+                {
+                    if ( memory_equal ( *read + 1
+                                      , multi_character_delimiter_token + 1
+                                      , multi_character_delimiter_token_length - 1
+                                      ))
+                    {
+                        // Escape? Y/N
+                        if ( *( *read - 1 ) != '\\' )
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                format_specifier->padding.value.length += 1;
+                *read += 1;
+            }
+
+            *read += multi_character_delimiter_token_length;
+        }
+    }
+
+    // CASE: Single character from format string.
     else
     {
-        format_specifier->padding.value = **read;
+        format_specifier->padding.value.value = *read;
+        format_specifier->padding.value.length = 1;
+        *read += 1;
     }
 
-    // Valid? Y/N
-    if (   !whitespace ( format_specifier->padding.value )
-        && !(   format_specifier->padding.value >= 32
-             && format_specifier->padding.value <= 126
-            ))
+    // Out of bounds? Y/N
+    if ( *read >= STRING_FORMAT_READ_LIMIT ( state ) )
     {
         format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
         return;
     }
 
-    *read += 1;
+    // Padding string valid? Y/N
+    for ( u64 i = 0; i < format_specifier->padding.value.length; ++i )
+    {
+        if (   !whitespace ( format_specifier->padding.value.value[ i ] )
+            && !(   format_specifier->padding.value.value[ i ] >= 32
+                 && format_specifier->padding.value.value[ i ] <= 126
+                ))
+        {
+            format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+            return;
+        }
+    }
 
     // STAGE 3: Parse width.
 
     // CASE: Wildcard (from argument).
     if ( memory_equal ( *read
-                      , STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
-                      , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_WILDCARD )
+                      , single_character_wildcard_token
+                      , single_character_wildcard_token_length
                       ))
     {
         // Invalidate if no arguments remain.
@@ -1023,7 +1220,7 @@ _string_format_validate_format_modifier_pad
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
-        *read += 1;
+        *read += single_character_wildcard_token_length;
     }
 
     // CASE: From format string.
@@ -1093,7 +1290,7 @@ _string_format_validate_format_modifier_pad
     // CASE: Nesting brace(s) present.
     //       Stop validating when the terminating brace is reached.
     format_specifier->padding.nested = true;
-    format_specifier->padding.format = *read;
+    format_specifier->padding.format.value = *read;
     u64 depth = 1;
     while ( depth )
     {
@@ -1125,8 +1322,9 @@ _string_format_validate_format_modifier_pad
     }
 
     // Validation complete.
-    format_specifier->padding.format_length = *read
-                                            - format_specifier->padding.format
+
+    format_specifier->padding.format.length = *read
+                                            - format_specifier->padding.format.value
                                             - 1
                                             ;
     format_specifier->padding.fixed = fixed;
@@ -1160,14 +1358,14 @@ _string_format_validate_format_modifier_sign
     if ( sign == STRING_FORMAT_SIGN_HIDE )
     {
         format_specifier->modifiers[ STRING_FORMAT_MODIFIER_HIDE_SIGN ] = true;
-        *read += _string_length ( STRING_FORMAT_MODIFIER_TOKEN_HIDE_SIGN );
+        *read += format_modifiers[ STRING_FORMAT_MODIFIER_HIDE_SIGN ].length;
     }
 
     // CASE: Show sign.
     else
     {
         format_specifier->modifiers[ STRING_FORMAT_MODIFIER_SHOW_SIGN ] = true;
-        *read += _string_length ( STRING_FORMAT_MODIFIER_TOKEN_SHOW_SIGN );
+        *read += format_modifiers[ STRING_FORMAT_MODIFIER_SHOW_SIGN ].length;
     }
 
     // Validation complete.
@@ -1189,7 +1387,7 @@ _string_format_validate_format_modifier_fix_precision
         return;
     }
 
-    *read += 1;
+    *read += format_modifiers[ STRING_FORMAT_MODIFIER_FIX_PRECISION ].length;
 
     // Out of bounds? Y/N
     if ( *read >= STRING_FORMAT_READ_LIMIT ( state ) )
@@ -1197,6 +1395,9 @@ _string_format_validate_format_modifier_fix_precision
         format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
         return;
     }
+
+    const char* wildcard_token = STRING_FORMAT_MODIFIER_TOKEN_WILDCARD;
+    const u64 wildcard_token_length = _string_length ( wildcard_token );
 
     // CASE: Explicit precision requested.
     if ( digit ( **read ) )
@@ -1233,10 +1434,7 @@ _string_format_validate_format_modifier_fix_precision
     }
 
     // CASE: Wildcard (from argument).
-    else if ( memory_equal ( *read
-                           , STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
-                           , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_WILDCARD )
-                           ))
+    else if ( memory_equal ( *read , wildcard_token , wildcard_token_length ) )
     {
         // Invalidate if no arguments remain.
         if ( !state->args_remaining )
@@ -1252,6 +1450,8 @@ _string_format_validate_format_modifier_fix_precision
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
+        *read += wildcard_token_length;
+
         // Invalidate if the requested precision is greater than the maximum
         // allowed by string_f64 (see core/string.h).
         if ( format_specifier->fix_precision.precision > STRING_FLOAT_MAX_PRECISION )
@@ -1259,8 +1459,6 @@ _string_format_validate_format_modifier_fix_precision
             format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
             return;
         }
-
-        *read += 1;
     }
 
     // CASE: No explicit precision requested (use default).
@@ -1268,7 +1466,6 @@ _string_format_validate_format_modifier_fix_precision
     {
         format_specifier->fix_precision.tag = false;
         format_specifier->fix_precision.precision = STRING_FORMAT_FLOAT_DEFAULT_PRECISION;
-        *read += 1;
     }
 
     // Validation complete.
@@ -1290,7 +1487,7 @@ _string_format_validate_format_modifier_radix
         return;
     }
 
-    *read += 1;
+    *read += format_modifiers[ STRING_FORMAT_MODIFIER_RADIX ].length;
 
     // Out of bounds? Y/N
     if ( *read >= STRING_FORMAT_READ_LIMIT ( state ) )
@@ -1299,10 +1496,9 @@ _string_format_validate_format_modifier_radix
     }
 
     // CASE: Wildcard (from argument).
-    if ( memory_equal ( *read
-                      , STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
-                      , _string_length ( STRING_FORMAT_MODIFIER_TOKEN_WILDCARD )
-                      ))
+    const char* wildcard_token = STRING_FORMAT_MODIFIER_TOKEN_WILDCARD;
+    const u64 wildcard_token_length = _string_length ( wildcard_token );
+    if ( memory_equal ( *read , wildcard_token , wildcard_token_length ) )
     {
         // Invalidate if no arguments remain.
         if ( !state->args_remaining )
@@ -1318,7 +1514,7 @@ _string_format_validate_format_modifier_radix
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
-        *read += 1;
+        *read += wildcard_token_length;
     }
 
     // CASE: From format string.
@@ -1382,6 +1578,8 @@ _string_format_validate_format_modifier_array
         return;
     }
 
+    *read += format_modifiers[ STRING_FORMAT_MODIFIER_ARRAY ].length;
+
     // Enough arguments present? Y/N
     if ( state->args_remaining < 3 )
     {
@@ -1393,7 +1591,6 @@ _string_format_validate_format_modifier_array
 
     format_specifier->container.tag = STRING_FORMAT_CONTAINER_ARRAY;
     format_specifier->modifiers[ STRING_FORMAT_MODIFIER_ARRAY ] = true;
-    *read += _string_length ( STRING_FORMAT_MODIFIER_TOKEN_ARRAY );
 }
 
 void
@@ -1410,13 +1607,19 @@ _string_format_validate_format_modifier_resizable_array
         return;
     }
 
-    // TODO: Add check here?
+    *read += format_modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ].length;
+
+    // Enough arguments present? Y/N
+    if ( !state->args_remaining )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
 
     // Validation complete.
 
     format_specifier->container.tag = STRING_FORMAT_CONTAINER_RESIZABLE_ARRAY;
     format_specifier->modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ] = true;
-    *read += _string_length ( STRING_FORMAT_MODIFIER_TOKEN_RESIZABLE_ARRAY );
 }
 
 void
@@ -1434,8 +1637,8 @@ _string_format_parse_next_argument
         // Generate and append the nested format substring.
         string_t* string;
         state_t state_;
-        state_.format = format_specifier->padding.format;
-        state_.format_length = format_specifier->padding.format_length;
+        state_.format = format_specifier->padding.format.value;
+        state_.format_length = format_specifier->padding.format.length;
         state_.args = state->args;
         state_.next_arg = state->next_arg;
         state_.args_remaining = state->args_remaining;
@@ -2292,9 +2495,59 @@ _string_format_append
     // CASE: Left padding required.
     if ( format_specifier->padding.tag == STRING_FORMAT_PADDING_LEFT )
     {
-        for ( u64 pad = pad_width; pad; --pad )
+        u64 pad = pad_width;
+        while ( pad )
         {
-            string_append ( *string , &format_specifier->padding.value , 1 );
+            u64 index = 0;
+
+            // Handle multi-character padding strings with escaped `'`
+            // characters.
+            if ( !format_specifier->padding.wildcard_value )
+            {
+                const char* multi_character_escape_token = "\\" STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER;
+                const u64 multi_character_escape_token_length = _string_length ( multi_character_escape_token );
+                u64 index_;
+                while ( string_contains ( format_specifier->padding.value.value + index
+                                        , format_specifier->padding.value.length - index
+                                        , multi_character_escape_token
+                                        , multi_character_escape_token_length
+                                        , false
+                                        , &index_
+                                        ))
+                {
+                    // Copy everything between the previous copy end and the
+                    // multi-character escape token.
+                    const u64 size = MIN ( pad , index_ );
+                    string_append ( *string
+                                  , format_specifier->padding.value.value + index
+                                  , size
+                                  );
+                    
+                    index += index_;
+                    pad -= size;
+
+                    // Maximum pad width reached? Y/N
+                    if ( !pad )
+                    {
+                        break;
+                    }
+
+                    // Skip the `\` token and continue.
+                    index += 1;
+                }
+            }
+
+            // Copy everything between the previous copy end and the end of the
+            // padding string.
+            const u64 size = MIN ( pad
+                                 , format_specifier->padding.value.length - index
+                                 );
+            string_append ( *string
+                          , format_specifier->padding.value.value + index
+                          , size
+                          );
+
+            pad -= size;
         }
     }
 
@@ -2304,9 +2557,59 @@ _string_format_append
     // CASE: Right padding required.
     if ( format_specifier->padding.tag == STRING_FORMAT_PADDING_RIGHT )
     {
-        for ( u64 pad = pad_width; pad; --pad )
+        u64 pad = pad_width;
+        while ( pad )
         {
-            string_append ( *string , &format_specifier->padding.value , 1 );
+            u64 index = 0;
+
+            // Handle multi-character padding strings with escaped `'`
+            // characters.
+            if ( !format_specifier->padding.wildcard_value )
+            {
+                const char* multi_character_escape_token = "\\" STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER;
+                const u64 multi_character_escape_token_length = _string_length ( multi_character_escape_token );
+                u64 index_;
+                while ( string_contains ( format_specifier->padding.value.value + index
+                                        , format_specifier->padding.value.length - index
+                                        , multi_character_escape_token
+                                        , multi_character_escape_token_length
+                                        , false
+                                        , &index_
+                                        ))
+                {
+                    // Copy everything between the previous copy end and the
+                    // multi-character escape token.
+                    const u64 size = MIN ( pad , index_ );
+                    string_append ( *string
+                                  , format_specifier->padding.value.value + index
+                                  , size
+                                  );
+                    
+                    index += index_;
+                    pad -= size;
+
+                    // Maximum pad width reached? Y/N
+                    if ( !pad )
+                    {
+                        break;
+                    }
+
+                    // Skip the `\` token and continue.
+                    index += 1;
+                }
+            }
+
+            // Copy everything between the previous copy end and the end of the
+            // padding string.
+            const u64 size = MIN ( pad
+                                 , format_specifier->padding.value.length - index
+                                 );
+            string_append ( *string
+                          , format_specifier->padding.value.value + index
+                          , size
+                          );
+
+            pad -= size;
         }
     }
     

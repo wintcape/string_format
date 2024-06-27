@@ -7,7 +7,7 @@
 
 #include "common.h"
 
-/** @brief (see container/string.h). */
+/** @brief (see container/string.h) */
 typedef char string_t;
 
 /** @brief Type and instance definitions for format specifier tags. */
@@ -30,11 +30,14 @@ typedef enum
 }
 STRING_FORMAT_SPECIFIER;
 
+/** @brief An alias for detecting an invalid format specifier tag. */
+#define STRING_FORMAT_SPECIFIER_INVALID \
+    STRING_FORMAT_SPECIFIER_COUNT
+
 /** @brief Type and instance definitions for format modifier tags. */
 typedef enum
 {
-    STRING_FORMAT_MODIFIER_WILDCARD
-,   STRING_FORMAT_MODIFIER_PAD_LEFT
+    STRING_FORMAT_MODIFIER_PAD_LEFT
 ,   STRING_FORMAT_MODIFIER_PAD_RIGHT
 ,   STRING_FORMAT_MODIFIER_SHOW_SIGN
 ,   STRING_FORMAT_MODIFIER_HIDE_SIGN
@@ -47,12 +50,17 @@ typedef enum
 }
 STRING_FORMAT_MODIFIER;
 
-#define STRING_FORMAT_SPECIFIER_INVALID STRING_FORMAT_SPECIFIER_COUNT /** @brief An alias for detecting an invalid format specifier tag. */
-#define STRING_FORMAT_MODIFIER_INVALID  STRING_FORMAT_MODIFIER_COUNT  /** @brief An alias for detecting an invalid format modifier tag. */
+ /** @brief An alias for detecting an invalid format modifier tag. */
+#define STRING_FORMAT_MODIFIER_INVALID \
+    STRING_FORMAT_MODIFIER_COUNT
 
-#define STRING_FORMAT_SPECIFIER_TOKEN_ID                             "%"    /** @brief The format specifier token. */
-                                                                            /** @brief Format specifier: ignore. */
-#define STRING_FORMAT_SPECIFIER_TOKEN_IGNORE                         STRING_FORMAT_SPECIFIER_TOKEN_ID
+/** @brief The format specifier token. */
+#define STRING_FORMAT_SPECIFIER_TOKEN_ID \
+    "%"
+
+/** @brief Format specifier: ignore. */
+#define STRING_FORMAT_SPECIFIER_TOKEN_IGNORE \
+    STRING_FORMAT_SPECIFIER_TOKEN_ID
 
 #define STRING_FORMAT_SPECIFIER_TOKEN_RAW                            "u"    /** @brief Format specifier: raw. */
 #define STRING_FORMAT_SPECIFIER_TOKEN_INTEGER                        "i"    /** @brief Format specifier: integer. */
@@ -68,15 +76,17 @@ STRING_FORMAT_MODIFIER;
 
 #define STRING_FORMAT_MODIFIER_TOKEN_PAD                             "P"    /** @brief Format modifier: pad. */
 #define STRING_FORMAT_MODIFIER_TOKEN_PAD_MINIMUM                     "p"    /** @brief Format modifier: pad (minimum width). */
-#define STRING_FORMAT_MODIFIER_TOKEN_LEFT                            "l"    /** @brief Format modifier: left. */
-#define STRING_FORMAT_MODIFIER_TOKEN_RIGHT                           "r"    /** @brief Format modifier: right. */
 #define STRING_FORMAT_MODIFIER_TOKEN_SHOW_SIGN                       "+"    /** @brief Format modifier: show sign. */
 #define STRING_FORMAT_MODIFIER_TOKEN_HIDE_SIGN                       "-"    /** @brief Format modifier: hide sign. */
 #define STRING_FORMAT_MODIFIER_TOKEN_FIX_PRECISION                   "."    /** @brief Format modifier: fix precision. */
 #define STRING_FORMAT_MODIFIER_TOKEN_RADIX                           "r"    /** @brief Format modifier: radix. */
 #define STRING_FORMAT_MODIFIER_TOKEN_ARRAY                           "a"    /** @brief Format modifier: array. */
 #define STRING_FORMAT_MODIFIER_TOKEN_RESIZABLE_ARRAY                 "A"    /** @brief Format modifier: resizable array. */
+
 #define STRING_FORMAT_MODIFIER_TOKEN_WILDCARD                        "?"    /** @brief Format modifier: wildcard. */
+#define STRING_FORMAT_MODIFIER_TOKEN_LEFT                            "l"    /** @brief Format modifier: left. */
+#define STRING_FORMAT_MODIFIER_TOKEN_RIGHT                           "r"    /** @brief Format modifier: right. */
+#define STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER       "'"    /** @brief Format modifier: multi-character delimiter. */
 
 /**
  * @brief String format function.

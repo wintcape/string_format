@@ -1,5 +1,3 @@
 **TODO**
-- Multi-character padding values: `%Pr'\n\t'20{(%i, %i)}`, `%Pr'\''14{Hello world!}`
-- Escape `?` for padding character (wildcard): `Pr\\?`
-
-- String/array slice format modifier: `%[21:25]s`, `%[1:]A`, `%[:]a`, `%[:2]S`
+- String/array slice format modifier: `%[21:25]s`, `%[1:]A`, `%[:]a`, `%[:2]S`, etc. +support for wildcards.
+- Fix lossy conversion in both `string_f64` and `to_f64`.
