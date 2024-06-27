@@ -2643,7 +2643,21 @@ test_string_format
     EXPECT ( memory_equal ( string , "%i%s%i%s%;" , string_length ( string ) ) );
     string_destroy ( string );
 
-    // TEST 74: Multi-character padding format modifiers support the use of ANSI formatting codes included in the padding string.
+    // TEST 74: An empty multi-character padding string will cause the format modifier to be invalidated.
+    string = string_format ( "%pl''10{;}" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%pl''10{;}" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%pl''10{;}" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 75: An empty multi-character padding string (from wildcard) will cause the format modifier to be invalidated.
+    string = string_format ( "%pl'?'10{;}" , &"" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%pl'?'10{;}" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%pl'?'10{;}" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 76: Multi-character padding format modifiers support the use of ANSI formatting codes included in the padding string.
     string = string_format ( "%Pl'?'?{} r %Pr-1{}%Pl'?'?{} g %Pr-1{}%Pl'?'?{} b %Pr-1{}%Pl'?'?{} a %Pr-1{}"
                            , &"" ANSI_CC2 ( ANSI_CC_BG_RED , ANSI_CC_FG_BLACK ) "-" , _string_length ( "" ANSI_CC2 ( ANSI_CC_BG_RED , ANSI_CC_FG_BLACK ) "-" )
                            , &"" ANSI_CC2 ( ANSI_CC_BG_GREEN , ANSI_CC_FG_BLACK ) "-" , _string_length ( "" ANSI_CC2 ( ANSI_CC_BG_GREEN , ANSI_CC_FG_BLACK ) "-" )
@@ -2655,7 +2669,7 @@ test_string_format
     EXPECT ( memory_equal ( string , ANSI_CC2 ( ANSI_CC_BG_RED , ANSI_CC_FG_BLACK ) "- r -" ANSI_CC2 ( ANSI_CC_BG_GREEN , ANSI_CC_FG_BLACK ) "- g -" ANSI_CC2 ( ANSI_CC_BG_BLUE , ANSI_CC_FG_BLACK ) "- b -" ANSI_CC2 ( ANSI_CC_BG_WHITE , ANSI_CC_FG_BLACK ) "- a -" , string_length ( string ) ) );
     string_destroy ( string );
 
-    // TEST 75: Padding format modifiers supports using backslash for the padding character, given that the character is not followed by an escape sequence (i.e. `\?` or `\'`).
+    // TEST 77: Padding format modifiers supports using backslash for the padding character, given that the character is not followed by an escape sequence (i.e. `\?` or `\'`).
     string = string_format ( "%Pl\\16r3i" , 10 );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "\\\\\\\\\\\\\\\\\\\\\\\\\\101" ) , string_length ( string ) );

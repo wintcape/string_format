@@ -997,7 +997,7 @@ _string_format_validate_format_modifier_pad
                            , single_character_wildcard_token_length
                            ))
     {
-        // Invalidate if no arguments remain.
+        // Arguments remaining? Y/N
         if ( !state->args_remaining )
         {
             format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
@@ -1083,7 +1083,7 @@ _string_format_validate_format_modifier_pad
                            , single_character_wildcard_token_length
                            ))
     {
-        // Invalidate if no arguments remain.
+        // Arguments remaining? Y/N
         if ( !state->args_remaining )
         {
             format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
@@ -1123,7 +1123,7 @@ _string_format_validate_format_modifier_pad
                           , multi_character_wildcard_token_length
                           ))
         {
-            // Invalidate if no arguments remain.
+            // Arguments remaining? Y/N
             if ( !state->args_remaining )
             {
                 format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
@@ -1206,6 +1206,13 @@ _string_format_validate_format_modifier_pad
         return;
     }
 
+    // Invalidate if the padding string is empty.
+    if ( !format_specifier->padding.value.length )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
     // STAGE 3: Parse width.
 
     // CASE: Wildcard (from argument).
@@ -1214,7 +1221,7 @@ _string_format_validate_format_modifier_pad
                       , single_character_wildcard_token_length
                       ))
     {
-        // Invalidate if no arguments remain.
+        // Arguments remaining? Y/N
         if ( !state->args_remaining )
         {
             format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
@@ -1446,7 +1453,7 @@ _string_format_validate_format_modifier_fix_precision
     // CASE: Wildcard (from argument).
     else if ( memory_equal ( *read , wildcard_token , wildcard_token_length ) )
     {
-        // Invalidate if no arguments remain.
+        // Arguments remaining? Y/N
         if ( !state->args_remaining )
         {
             format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
@@ -1510,7 +1517,7 @@ _string_format_validate_format_modifier_radix
     const u64 wildcard_token_length = _string_length ( wildcard_token );
     if ( memory_equal ( *read , wildcard_token , wildcard_token_length ) )
     {
-        // Invalidate if no arguments remain.
+        // Arguments remaining? Y/N
         if ( !state->args_remaining )
         {
             format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
