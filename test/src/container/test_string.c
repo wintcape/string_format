@@ -2637,10 +2637,10 @@ test_string_format
     string_destroy ( string );
 
     // TEST 73: Format specifiers contained within **invalid** multi-character padding strings are printed verbatim (not evaluated).
-    string = string_format ( "%pl'%i%s'0{;}" );
+    string = string_format ( "%pl'%i%s'1r1i" , 0 );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    EXPECT_EQ ( _string_length ( "%pl'%i%s'0{;}" ) , string_length ( string ) );
-    EXPECT ( memory_equal ( string , "%pl'%i%s'0{;}" , string_length ( string ) ) );
+    EXPECT_EQ ( _string_length ( "%pl'%i%s'1r1i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%pl'%i%s'1r1i" , string_length ( string ) ) );
     string_destroy ( string );
 
     // TEST 74: An empty multi-character padding string will cause the format modifier to be invalidated.
