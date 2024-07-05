@@ -1999,9 +1999,11 @@ test_string_format
 
     const f32 const_f32_array_in[ 16 ] = { -8 , -7 , -6 , -5 , -4 , -3 , -2 , -1 , 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 };
     const i8 const_i8_array_in[ 16 ] = { -8 , -7 , -6 , -5 , -4 , -3 , -2 , -1 , 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 };
+    const char* const_string_array_in[ 4 ] = { "Hello" , " " , "world" , "!" };
     const char* const_string_in = "Hello world!";
     f32* f32_array_in = array_create_from ( f32 , const_f32_array_in , 16 );
     i8* i8_array_in = array_create_from ( i8 , const_i8_array_in , 16 );
+    char** string_array_in = array_create_from ( char* , const_string_array_in , 4 );
     char* string_in = string_create_from ( const_string_in );
     char* really_long_string_in = _string_create ( 100 * STACK_STRING_MAX_SIZE /* MIN ( 1000 * STACK_STRING_MAX_SIZE , memory_amount_free () / 2 - KiB ( 1 ) ) */ );
     f64 float_in;
@@ -2949,6 +2951,34 @@ test_string_format
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "%Aai" ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "%Aai" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 104: Array format modifier correctly prints an array of null-terminated strings.
+    string = string_format ( "%as" , const_string_array_in , 4 , sizeof ( char* ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ `Hello`, ` `, `world`, `!` }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ `Hello`, ` `, `world`, `!` }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 105: Resizable array format modifier correctly prints an array of null-terminated strings.
+    string = string_format ( "%As" , string_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ `Hello`, ` `, `world`, `!` }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ `Hello`, ` `, `world`, `!` }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 106: Array slice format modifier correctly prints a range of elements from an array of null-terminated strings.
+    string = string_format ( "%[2:]as" , const_string_array_in , 4 , sizeof ( char* ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ `world`, `!` }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ `world`, `!` }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 107: Resizable array slice format modifier correctly prints a range of elements from an array of null-terminated strings.
+    string = string_format ( "%[2:]As" , string_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ `world`, `!` }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ `world`, `!` }" , string_length ( string ) ) );
     string_destroy ( string );
 
     // TODO: Add support for passing a single backslash as a multi-character

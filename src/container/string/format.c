@@ -2197,11 +2197,20 @@ _string_format_parse_next_argument
         switch ( format_specifier->collection.tag )
         {
             case STRING_FORMAT_COLLECTION_STRING:
+            {
+                _string_format_parse_argument_string ( state
+                                                     , format_specifier
+                                                     , ( char* ) arg
+                                                     );
+                _string_format_consume_next_argument ( state );
+            }
+            break;
+
             case STRING_FORMAT_COLLECTION_RESIZABLE_STRING:
             {
                 _string_format_parse_argument_string ( state
                                                      , format_specifier
-                                                     , 0
+                                                     , ( string_t* ) arg
                                                      );
                 _string_format_consume_next_argument ( state );
             }
@@ -2739,23 +2748,45 @@ _string_format_parse_argument_string
 ,   const char*                         arg
 )
 {
+    const char* string;
     u64 string_from;
     u64 string_to;
-    if (   format_specifier->collection.sliced
-        && (   format_specifier->collection.tag == STRING_FORMAT_COLLECTION_STRING
-            || format_specifier->collection.tag == STRING_FORMAT_COLLECTION_RESIZABLE_STRING
-           ))
+
+    // CASE: Single string.
+    if (   format_specifier->collection.tag == STRING_FORMAT_COLLECTION_STRING
+        || format_specifier->collection.tag == STRING_FORMAT_COLLECTION_RESIZABLE_STRING
+       )
     {
-        string_from = format_specifier->collection.slice.from;
-        string_to = format_specifier->collection.slice.to;
+        string = format_specifier->collection.string.string;
+
+        // CASE: Slice.
+        if ( format_specifier->collection.sliced )
+        {
+            string_from = format_specifier->collection.slice.from;
+            string_to = format_specifier->collection.slice.to;
+        }
+
+        // CASE: Full.
+        else
+        {
+            string_from = 0;
+            string_to = format_specifier->collection.string.length;
+        }
     }
+
+    // CASE: Collection of strings.
     else
     {
+        string = arg;
         string_from = 0;
-        string_to = format_specifier->collection.string.length;
+        string_to = ( format_specifier->tag == STRING_FORMAT_SPECIFIER_RESIZABLE_STRING )
+                  ? string_length ( string )
+                  : _string_length ( string )
+                  ;
     }
+
     return _string_format_append ( &state->string
-                                 , format_specifier->collection.string.string + string_from
+                                 , string + string_from
                                  , string_to - string_from
                                  , format_specifier
                                  );
@@ -2911,7 +2942,10 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_STRING:
             {
                 _string_append ( state->string , "`" );
-                _string_format_parse_argument_string ( state , format_specifier , 0 );
+                _string_format_parse_argument_string ( state
+                                                     , format_specifier
+                                                     , *( ( char** ) element )
+                                                     );
                 _string_append ( state->string , "`" );
             }
             break;
@@ -2919,7 +2953,10 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_RESIZABLE_STRING:
             {
                 _string_append ( state->string , "`" );
-                _string_format_parse_argument_string ( state , format_specifier , 0 );
+                _string_format_parse_argument_string ( state
+                                                     , format_specifier
+                                                     , *( ( string_t** ) element )
+                                                     );
                 _string_append ( state->string , "`" );
             }
             break;
