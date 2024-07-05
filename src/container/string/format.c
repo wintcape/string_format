@@ -91,9 +91,12 @@ format_modifiers[ STRING_FORMAT_MODIFIER_COUNT ] =
     ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_RESIZABLE_ARRAY
         , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_RESIZABLE_ARRAY ) - 1
         }
+    ,   { .value = STRING_FORMAT_MODIFIER_TOKEN_SLICE_BEGIN
+        , .length = sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_BEGIN ) - 1
+        }
     };
 
-/** @brief Type and instance definitions for string padding tag. */
+/** @brief Type and instance definitions for a string padding tag. */
 typedef enum
 {
     STRING_FORMAT_PADDING_NONE
@@ -120,7 +123,7 @@ string_format_padding_t;
 /** @brief Maximum pad width. */
 #define STRING_FORMAT_MAX_PAD_WIDTH 65535
 
-/** @brief Type and instance definitions for string sign tag. */
+/** @brief Type and instance definitions for a sign tag. */
 typedef enum
 {
     STRING_FORMAT_SIGN_NONE
@@ -129,14 +132,14 @@ typedef enum
 }
 STRING_FORMAT_SIGN;
 
-/** @brief Type definition for a container to hold string sign configuration info. */
+/** @brief Type definition for a container to hold sign configuration info. */
 typedef struct
 {
     STRING_FORMAT_SIGN tag;
 }
 string_format_sign_t;
 
-/** @brief Type definition for a container to hold string fix-precision configuration info. */
+/** @brief Type definition for a container to hold fix-precision configuration info. */
 typedef struct
 {
     bool    tag;
@@ -147,7 +150,7 @@ string_format_fix_precision_t;
 /** @brief Default floating point decimal precision. */
 #define STRING_FORMAT_FLOAT_DEFAULT_PRECISION 6
 
-/** @brief Type definition for a container to hold string radix configuration info. */
+/** @brief Type definition for a container to hold radix configuration info. */
 typedef struct
 {
     u8 radix;
@@ -157,21 +160,56 @@ string_format_radix_t;
 /** @brief Default numeric radix. */
 #define STRING_FORMAT_DEFAULT_RADIX 10
 
-/** @brief Type and instance definitions for a string data structure tag. */
-typedef enum
-{
-    STRING_FORMAT_CONTAINER_NONE
-,   STRING_FORMAT_CONTAINER_ARRAY
-,   STRING_FORMAT_CONTAINER_RESIZABLE_ARRAY
-}
-STRING_FORMAT_CONTAINER;
-
-/** @brief Type definition for a container to hold string data structure configuration info. */
+/** @brief Type definition for a container to hold an index range. */
 typedef struct
 {
-    STRING_FORMAT_CONTAINER tag;
+    u64     from;
+    u64     to;
 }
-string_format_container_t;
+string_format_range_t;
+
+/** @brief Type and instance definitions for a collection tag. */
+typedef enum
+{
+    STRING_FORMAT_COLLECTION_NONE
+,   STRING_FORMAT_COLLECTION_STRING
+,   STRING_FORMAT_COLLECTION_RESIZABLE_STRING
+,   STRING_FORMAT_COLLECTION_ARRAY
+,   STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY
+}
+STRING_FORMAT_COLLECTION;
+
+/** @brief Type definition for a container to hold string info. */
+typedef struct
+{
+    char*   string;
+    u64     length;
+}
+string_format_string_t;
+
+/** @brief Type definition for a container to hold array info. */
+typedef struct
+{
+    void*   array;
+    u64     length;
+    u64     stride;
+}
+string_format_array_t;
+
+/** @brief Type definition for a container to hold collection info. */
+typedef struct
+{
+    STRING_FORMAT_COLLECTION    tag;
+    union
+    {
+        string_format_string_t  string;
+        string_format_array_t   array;
+    };
+
+    bool                        sliced;
+    string_format_range_t       slice;
+}
+string_format_collection_t;
 
 /** @brief Type definition for a container to hold format specifier info. */
 typedef struct
@@ -184,7 +222,7 @@ typedef struct
     string_format_sign_t            sign;
     string_format_radix_t           radix;
     string_format_fix_precision_t   fix_precision;
-    string_format_container_t       container;
+    string_format_collection_t      collection;
 }
 string_format_specifier_t;
 
@@ -212,6 +250,33 @@ state_t;
 /** @brief Defines the read limit for the format string. */
 #define STRING_FORMAT_READ_LIMIT(state) \
     ( (state)->format + (state)->format_length )
+
+/**
+ * @brief Variant of memory_equal which performs a bound check prior to
+ * string comparison.
+ *
+ * @param s1 A string. Must be non-zero.
+ * @param s2 A string. Must be non-zero.
+ * @param size The number of bytes to compare.
+ * @param limit If the sum of s1 and size exceeds this value, the test will
+ * fail.
+ * @return true if strings are equal, or size exceeds limit; false otherwise.
+ */
+INLINE
+bool
+_memory_equal
+(   const void* s1
+,   const void* s2
+,   u64         size
+,   const void* limit
+)
+{
+    if ( ( ( void* )( ( ( u64 ) s1 ) + size ) ) > limit )
+    {
+        return false;
+    }
+    return memory_equal ( s1 , s2 , size );
+}
 
 /**
  * @brief Variant of _string_format which starts processing a format string
@@ -271,6 +336,7 @@ void _string_format_validate_format_modifier_fix_precision ( state_t* state , co
 void _string_format_validate_format_modifier_radix ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
 void _string_format_validate_format_modifier_array ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
 void _string_format_validate_format_modifier_resizable_array ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
+void _string_format_validate_format_modifier_slice ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
 
 /**
  * @brief Parses and prints the next argument according to the current format
@@ -297,11 +363,9 @@ u64 _string_format_parse_argument_floating_point_abbreviated ( state_t* state , 
 u64 _string_format_parse_argument_floating_point_fractional_only ( state_t* state , const string_format_specifier_t* format_specifier , const f64* arg );
 u64 _string_format_parse_argument_address ( state_t* state , const string_format_specifier_t* format_specifier , const void* arg );
 u64 _string_format_parse_argument_character ( state_t* state , const string_format_specifier_t* format_specifier , const char arg );
-u64 _string_format_parse_argument_string ( state_t* state , const string_format_specifier_t* format_specifier , const char* arg );
-u64 _string_format_parse_argument_resizable_string ( state_t* state , const string_format_specifier_t* format_specifier , const string_t* arg );
 u64 _string_format_parse_argument_file_info ( state_t* state , const string_format_specifier_t* format_specifier , file_t* arg );
-u64 _string_format_parse_argument_array ( state_t* state , const string_format_specifier_t* format_specifier , const void* array , const u64 array_length , const u64 array_stride );
-u64 _string_format_parse_argument_resizable_array ( state_t* state , const string_format_specifier_t* format_specifier , const array_t* arg );
+u64 _string_format_parse_argument_string ( state_t* state , const string_format_specifier_t* format_specifier , const char* arg );
+u64 _string_format_parse_argument_array ( state_t* state , const string_format_specifier_t* format_specifier , const void* arg );
 
 /**
  * @brief Wrapper for string_append that respects the left- and right- padding
@@ -378,12 +442,13 @@ __string_format
             read += 1;
             continue;
         }
-        if ( !memory_equal ( read + 1
-                           , format_specifier_token + 1
-                           , format_specifier_token_length - 1
-                           ))
+        if ( !_memory_equal ( read + 1
+                            , format_specifier_token + 1
+                            , format_specifier_token_length - 1
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
         {
-            read += 1;
+            read += format_specifier_token_length;
             continue;
         }
 
@@ -530,7 +595,10 @@ _string_format_validate_format_specifier
     format_specifier->radix.radix = STRING_FORMAT_DEFAULT_RADIX;
     format_specifier->fix_precision.tag = false;
     format_specifier->fix_precision.precision = STRING_FORMAT_FLOAT_DEFAULT_PRECISION;
-    format_specifier->container.tag = STRING_FORMAT_CONTAINER_NONE;
+    format_specifier->collection.tag = STRING_FORMAT_COLLECTION_NONE;
+    format_specifier->collection.sliced = false;
+    format_specifier->collection.slice.from = 0;
+    format_specifier->collection.slice.to = 0;
 
     // STAGE 1: "Default" case. Determine if the token is an exact match to a
     //          format specifier, i.e. it has no modifiers.
@@ -546,10 +614,11 @@ _string_format_validate_format_specifier
         {
             continue;
         }
-        if ( !memory_equal ( read + 1
-                           , format_specifiers[ i ].value + 1
-                           , format_specifiers[ i ].length - 1
-                           ))
+        if ( !_memory_equal ( read + 1
+                            , format_specifiers[ i ].value + 1
+                            , format_specifiers[ i ].length - 1
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
         {
             continue;
         }
@@ -559,10 +628,11 @@ _string_format_validate_format_specifier
         // token.
         if ( i == STRING_FORMAT_SPECIFIER_FLOATING_POINT )
         {
-            if ( memory_equal ( read
-                              , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
-                              , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
-                              ))
+            if ( _memory_equal ( read
+                               , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
+                               , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
+                               , STRING_FORMAT_READ_LIMIT ( state )
+                               ))
             {
                 _string_format_validate_format_specifier_file_info ( state , &read , format_specifier );
                 format_specifier->length = read - read_ + 1;
@@ -613,10 +683,11 @@ _string_format_validate_format_specifier
             {
                 continue;
             }
-            if ( !memory_equal ( read + 1
-                               , format_modifiers[ j ].value + 1
-                               , format_modifiers[ j ].length - 1
-                               ))
+            if ( !_memory_equal ( read + 1
+                                , format_modifiers[ j ].value + 1
+                                , format_modifiers[ j ].length - 1
+                                , STRING_FORMAT_READ_LIMIT ( state )
+                                ))
             {
                 continue;
             }
@@ -633,6 +704,7 @@ _string_format_validate_format_specifier
                 case STRING_FORMAT_MODIFIER_RADIX:           _string_format_validate_format_modifier_radix ( state , &read , format_specifier )                          ;k = true;break;
                 case STRING_FORMAT_MODIFIER_ARRAY:           _string_format_validate_format_modifier_array ( state , &read , format_specifier )                          ;k = true;break;
                 case STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY: _string_format_validate_format_modifier_resizable_array ( state , &read , format_specifier )                ;k = true;break;
+                case STRING_FORMAT_MODIFIER_SLICE:           _string_format_validate_format_modifier_slice ( state , &read , format_specifier )                          ;k = true;break;
                 default:                                                                                                                                                           break;
             }
             if ( k )
@@ -680,10 +752,11 @@ _string_format_validate_format_specifier
             {
                 continue;
             }
-            if ( !memory_equal ( read + 1
-                               , format_specifiers[ k ].value + 1
-                               , format_specifiers[ k ].length - 1
-                               ))
+            if ( !_memory_equal ( read + 1
+                                , format_specifiers[ k ].value + 1
+                                , format_specifiers[ k ].length - 1
+                                , STRING_FORMAT_READ_LIMIT ( state )
+                                ))
             {
                 continue;
             }
@@ -693,10 +766,11 @@ _string_format_validate_format_specifier
             // token.
             if ( k == STRING_FORMAT_SPECIFIER_FLOATING_POINT )
             {
-                if ( memory_equal ( read
-                                  , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
-                                  , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
-                                  ))
+                if ( _memory_equal ( read
+                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
+                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
+                                   , STRING_FORMAT_READ_LIMIT ( state )
+                                   ))
                 {
                     _string_format_validate_format_specifier_file_info ( state , &read , format_specifier );
                     format_specifier->length = read - read_ + 1;
@@ -892,6 +966,39 @@ _string_format_validate_format_specifier_string
         format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
         return;
     }
+
+    // Fill out collection info by peeking the corresponding argument.
+    if ( format_specifier->collection.tag == STRING_FORMAT_COLLECTION_NONE )
+    {
+        format_specifier->collection.tag = STRING_FORMAT_COLLECTION_STRING;
+        format_specifier->collection.string.string = *( ( char** )( state->next_arg ) );
+        format_specifier->collection.string.length = format_specifier->collection.string.string
+                                                ? _string_length ( format_specifier->collection.string.string )
+                                                : 0
+                                                ;
+
+        // Slice? Y/N
+        if ( format_specifier->collection.sliced )
+        {
+            // The upper slice index may now be validated since the string length was
+            // retrieved.
+            if ( format_specifier->collection.slice.to != ( ( u64 )( -1 ) ) )
+            {
+                if ( format_specifier->collection.slice.to > format_specifier->collection.string.length )
+                {
+                    format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                    return;
+                }
+            }
+            else
+            {
+                format_specifier->collection.slice.to = format_specifier->collection.string.length;
+            }
+        }
+    }
+
+    // Validation complete.
+
     format_specifier->tag = STRING_FORMAT_SPECIFIER_STRING;
     *read += format_specifiers[ STRING_FORMAT_SPECIFIER_STRING ].length;
 }
@@ -908,6 +1015,39 @@ _string_format_validate_format_specifier_resizable_string
         format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
         return;
     }
+
+    // Fill out collection info by peeking the corresponding argument.
+    if ( format_specifier->collection.tag == STRING_FORMAT_COLLECTION_NONE )
+    {
+        format_specifier->collection.tag = STRING_FORMAT_COLLECTION_RESIZABLE_STRING;
+        format_specifier->collection.string.string = *( ( string_t** )( state->next_arg ) );
+        format_specifier->collection.string.length = format_specifier->collection.string.string
+                                                ? string_length ( format_specifier->collection.string.string )
+                                                : 0
+                                                ;
+
+        // Slice? Y/N
+        if ( format_specifier->collection.sliced )
+        {
+            // The upper slice index may now be validated since the string length was
+            // retrieved.
+            if ( format_specifier->collection.slice.to != ( ( u64 )( -1 ) ) )
+            {
+                if ( format_specifier->collection.slice.to > format_specifier->collection.string.length )
+                {
+                    format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                    return;
+                }
+            }
+            else
+            {
+                format_specifier->collection.slice.to = format_specifier->collection.string.length;
+            }
+        }
+    }
+
+    // Validation complete.
+
     format_specifier->tag = STRING_FORMAT_SPECIFIER_RESIZABLE_STRING;
     *read += format_specifiers[ STRING_FORMAT_SPECIFIER_RESIZABLE_STRING ].length;
 }
@@ -954,48 +1094,40 @@ _string_format_validate_format_modifier_pad
         return;
     }
 
-    const char* left_token = STRING_FORMAT_MODIFIER_TOKEN_LEFT;
-    const u64 left_token_length = _string_length ( left_token );
-    const char* right_token = STRING_FORMAT_MODIFIER_TOKEN_RIGHT;
-    const u64 right_token_length = _string_length ( right_token );
-    const char* single_character_wildcard_token = STRING_FORMAT_MODIFIER_TOKEN_WILDCARD;
-    const u64 single_character_wildcard_token_length = _string_length ( single_character_wildcard_token );
-    const char* multi_character_delimiter_token = STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER;
-    const u64 multi_character_delimiter_token_length = _string_length ( multi_character_delimiter_token );
-    const char* multi_character_wildcard_token = STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
-                                                 STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER
-                                                 ;
-    const u64 multi_character_wildcard_token_length = _string_length ( multi_character_wildcard_token );
-    const char* multi_character_wildcard_escape_token = "\\"
-                                                        STRING_FORMAT_MODIFIER_TOKEN_WILDCARD
-                                                        STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER
-                                                        ;
-    const u64 multi_character_wildcard_escape_token_length = _string_length ( multi_character_wildcard_escape_token );
     STRING_FORMAT_MODIFIER modifier;
 
     // STAGE 1: Parse alignment.
 
     // CASE: Pad left.
-    if ( memory_equal ( *read , left_token , left_token_length ) )
+    if ( _memory_equal ( *read
+                       , "l"
+                       , sizeof ( "l" ) - 1
+                       , STRING_FORMAT_READ_LIMIT ( state )
+                       ))
     {
         format_specifier->padding.tag = STRING_FORMAT_PADDING_LEFT;
         modifier = STRING_FORMAT_MODIFIER_PAD_LEFT;
-        *read += left_token_length;
+        *read += sizeof ( "l" ) - 1;
     }
 
     // CASE: Pad right.
-    else if ( memory_equal ( *read , right_token , right_token_length ) )
+    else if ( _memory_equal ( *read
+                            , "r"
+                            , sizeof ( "r" ) - 1
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
     {
         format_specifier->padding.tag = STRING_FORMAT_PADDING_RIGHT;
         modifier = STRING_FORMAT_MODIFIER_PAD_RIGHT;
-        *read += right_token_length;
+        *read += sizeof ( "r" ) - 1;
     }
 
     // CASE: Wildcard (from argument).
-    else if ( memory_equal ( *read
-                           , single_character_wildcard_token
-                           , single_character_wildcard_token_length
-                           ))
+    else if ( _memory_equal ( *read
+                            , "?"
+                            , sizeof ( "?" ) - 1
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
     {
         // Arguments remaining? Y/N
         if ( !state->args_remaining )
@@ -1011,17 +1143,25 @@ _string_format_validate_format_modifier_pad
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
-        *read += single_character_wildcard_token_length;
+        *read += sizeof ( "?" ) - 1;
 
         // CASE: Pad left.
-        if ( memory_equal ( alignment , left_token , left_token_length ) )
+        if ( _memory_equal ( alignment
+                           , "l"
+                           , sizeof ( "l" ) - 1
+                           , STRING_FORMAT_READ_LIMIT ( state )
+                           ))
         {
             format_specifier->padding.tag = STRING_FORMAT_PADDING_LEFT;
             modifier = STRING_FORMAT_MODIFIER_PAD_LEFT;
         }
 
         // CASE: Pad right.
-        else if ( memory_equal ( alignment , right_token , right_token_length ) )
+        else if ( _memory_equal ( alignment
+                                , "r"
+                                , sizeof ( "r" ) - 1
+                                , STRING_FORMAT_READ_LIMIT ( state )
+                                ))
         {
             format_specifier->padding.tag = STRING_FORMAT_PADDING_RIGHT;
             modifier = STRING_FORMAT_MODIFIER_PAD_RIGHT;
@@ -1051,23 +1191,25 @@ _string_format_validate_format_modifier_pad
         *read += 1;
 
         // CASE: Escape single-character wildcard (i.e. `?`).
-        if ( memory_equal ( *read
-                          , single_character_wildcard_token
-                          , single_character_wildcard_token_length
-                          ))
+        if ( _memory_equal ( *read
+                           , "?"
+                           , sizeof ( "?" ) - 1
+                           , STRING_FORMAT_READ_LIMIT ( state )
+                           ))
         {
             format_specifier->padding.value.value = "?";
-            *read += single_character_wildcard_token_length;
+            *read += sizeof ( "?" ) - 1;
         }
 
         // CASE: Escape multi-character delimiter (i.e. `'`).
-        else if ( memory_equal ( *read
-                               , multi_character_delimiter_token
-                               , multi_character_delimiter_token_length
-                               ))
+        else if ( _memory_equal ( *read
+                                , "'"
+                                , sizeof ( "'" ) - 1
+                                , STRING_FORMAT_READ_LIMIT ( state )
+                                ))
         {
             format_specifier->padding.value.value = "'";
-            *read += multi_character_delimiter_token_length;
+            *read += sizeof ( "'" ) - 1;
         }
 
         // CASE: No escape (i.e. `\`).
@@ -1078,10 +1220,11 @@ _string_format_validate_format_modifier_pad
     }
 
     // CASE: Wildcard (single character from argument).
-    else if ( memory_equal ( *read
-                           , single_character_wildcard_token
-                           , single_character_wildcard_token_length
-                           ))
+    else if ( _memory_equal ( *read
+                            , "?"
+                            , sizeof ( "?" ) - 1
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
     {
         // Arguments remaining? Y/N
         if ( !state->args_remaining )
@@ -1099,29 +1242,35 @@ _string_format_validate_format_modifier_pad
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
-        *read += single_character_wildcard_token_length;
+        *read += sizeof ( "?" ) - 1;
     }
 
     // Multi-character padding? Y/N
-    else if ( memory_equal ( *read
-                           , multi_character_delimiter_token
-                           , multi_character_delimiter_token_length
-                           ))
+    else if ( _memory_equal ( *read
+                            , "'"
+                            , sizeof ( "'" ) - 1
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
     {
-        *read += multi_character_delimiter_token_length;
+        *read += sizeof ( "'" ) - 1;
 
         // Out of bounds? Y/N
-        if ( *read + multi_character_delimiter_token_length + 1 >= STRING_FORMAT_READ_LIMIT ( state ) )
+        if (  *read
+            + ( sizeof ( "'" ) - 1 )
+            + 1 
+            >= STRING_FORMAT_READ_LIMIT ( state )
+           )
         {
             format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
             return;
         }
 
         // CASE: Multi-character wildcard (null-terminated string from argument).
-        if ( memory_equal ( *read
-                          , multi_character_wildcard_token
-                          , multi_character_wildcard_token_length
-                          ))
+        if ( _memory_equal ( *read
+                           , "?'"
+                           , sizeof ( "?'" ) - 1
+                           , STRING_FORMAT_READ_LIMIT ( state )
+                           ))
         {
             // Arguments remaining? Y/N
             if ( !state->args_remaining )
@@ -1142,18 +1291,19 @@ _string_format_validate_format_modifier_pad
             // Consume the argument that was just parsed.
             _string_format_consume_next_argument ( state );
 
-            *read += multi_character_wildcard_token_length;
+            *read += sizeof ( "?'" ) - 1;
         }
 
         // CASE: Escape multi-character wildcard (i.e. `'?'`).
-        else if ( memory_equal ( *read
-                               , multi_character_wildcard_escape_token
-                               , multi_character_wildcard_escape_token_length
-                               ))
+        else if ( _memory_equal ( *read
+                                , "\\?'"
+                                , sizeof ( "\\?'" ) - 1
+                                , STRING_FORMAT_READ_LIMIT ( state )
+                                ))
         {
             format_specifier->padding.value.value = "?";
             format_specifier->padding.value.length = 1;
-            *read += multi_character_wildcard_escape_token_length;
+            *read += sizeof ( "\\?'" ) - 1;
         }
 
         else
@@ -1166,12 +1316,8 @@ _string_format_validate_format_modifier_pad
                   )
             {
                 // Terminator encountered? Y/N
-                if ( **read == multi_character_delimiter_token[ 0 ] )
+                if ( **read == '\'' )
                 {
-                    if ( memory_equal ( *read + 1
-                                      , multi_character_delimiter_token + 1
-                                      , multi_character_delimiter_token_length - 1
-                                      ))
                     {
                         // Escape? Y/N
                         if ( *( *read - 1 ) != '\\' )
@@ -1187,7 +1333,7 @@ _string_format_validate_format_modifier_pad
             format_specifier->padding.value.length = *read
                                                    - format_specifier->padding.value.value
                                                    ;
-            *read += multi_character_delimiter_token_length;
+            *read += sizeof ( "'" ) - 1;
         }
     }
 
@@ -1216,10 +1362,11 @@ _string_format_validate_format_modifier_pad
     // STAGE 3: Parse width.
 
     // CASE: Wildcard (from argument).
-    if ( memory_equal ( *read
-                      , single_character_wildcard_token
-                      , single_character_wildcard_token_length
-                      ))
+    if ( _memory_equal ( *read
+                       , "?"
+                       , sizeof ( "?" ) - 1
+                       , STRING_FORMAT_READ_LIMIT ( state )
+                       ))
     {
         // Arguments remaining? Y/N
         if ( !state->args_remaining )
@@ -1237,7 +1384,7 @@ _string_format_validate_format_modifier_pad
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
-        *read += single_character_wildcard_token_length;
+        *read += sizeof ( "?" ) - 1;
     }
 
     // CASE: From format string.
@@ -1413,9 +1560,6 @@ _string_format_validate_format_modifier_fix_precision
         return;
     }
 
-    const char* wildcard_token = STRING_FORMAT_MODIFIER_TOKEN_WILDCARD;
-    const u64 wildcard_token_length = _string_length ( wildcard_token );
-
     // CASE: Explicit precision requested.
     if ( digit ( **read ) )
     {
@@ -1451,7 +1595,11 @@ _string_format_validate_format_modifier_fix_precision
     }
 
     // CASE: Wildcard (from argument).
-    else if ( memory_equal ( *read , wildcard_token , wildcard_token_length ) )
+    else if ( _memory_equal ( *read
+                            , "?"
+                            , sizeof ( "?" ) - 1
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
     {
         // Arguments remaining? Y/N
         if ( !state->args_remaining )
@@ -1467,7 +1615,7 @@ _string_format_validate_format_modifier_fix_precision
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
-        *read += wildcard_token_length;
+        *read += sizeof ( "?" ) - 1;
 
         // Invalidate if the requested precision is greater than the maximum
         // allowed by string_f64 (see core/string.h).
@@ -1513,9 +1661,11 @@ _string_format_validate_format_modifier_radix
     }
 
     // CASE: Wildcard (from argument).
-    const char* wildcard_token = STRING_FORMAT_MODIFIER_TOKEN_WILDCARD;
-    const u64 wildcard_token_length = _string_length ( wildcard_token );
-    if ( memory_equal ( *read , wildcard_token , wildcard_token_length ) )
+    if ( _memory_equal ( *read
+                       , "?"
+                       , sizeof ( "?" ) - 1
+                       , STRING_FORMAT_READ_LIMIT ( state )
+                       ))
     {
         // Arguments remaining? Y/N
         if ( !state->args_remaining )
@@ -1531,7 +1681,7 @@ _string_format_validate_format_modifier_radix
         // Consume the argument that was just parsed.
         _string_format_consume_next_argument ( state );
 
-        *read += wildcard_token_length;
+        *read += sizeof ( "?" ) - 1;
     }
 
     // CASE: From format string.
@@ -1589,7 +1739,9 @@ _string_format_validate_format_modifier_array
 )
 {
     // Already present? Y/N
-    if ( format_specifier->modifiers[ STRING_FORMAT_MODIFIER_ARRAY ] )
+    if (   format_specifier->modifiers[ STRING_FORMAT_MODIFIER_ARRAY ]
+        || format_specifier->modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ]
+       )
     {
         format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
         return;
@@ -1604,9 +1756,33 @@ _string_format_validate_format_modifier_array
         return;
     }
 
-    // Validation complete.
+    // Fill out collection info by peeking the corresponding arguments.
+    format_specifier->collection.tag = STRING_FORMAT_COLLECTION_ARRAY;
+    format_specifier->collection.array.array = *( ( void** )( state->next_arg ) );
+    format_specifier->collection.array.length = state->next_arg[ 1 ];
+    format_specifier->collection.array.stride = state->next_arg[ 2 ];
 
-    format_specifier->container.tag = STRING_FORMAT_CONTAINER_ARRAY;
+    // Slice? Y/N
+    if ( format_specifier->collection.sliced )
+    {
+        // The upper slice index may now be validated since the array length was
+        // retrieved.
+        if ( format_specifier->collection.slice.to != ( ( u64 )( -1 ) ) )
+        {
+            if ( format_specifier->collection.slice.to > format_specifier->collection.array.length )
+            {
+                format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                return;
+            }
+        }
+        else
+        {
+            format_specifier->collection.slice.to = format_specifier->collection.array.length;
+        }
+    }
+
+    // Validation complete.
+    
     format_specifier->modifiers[ STRING_FORMAT_MODIFIER_ARRAY ] = true;
 }
 
@@ -1618,7 +1794,9 @@ _string_format_validate_format_modifier_resizable_array
 )
 {
     // Already present? Y/N
-    if ( format_specifier->modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ] )
+    if (   format_specifier->modifiers[ STRING_FORMAT_MODIFIER_ARRAY ]
+        || format_specifier->modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ]
+       )
     {
         format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
         return;
@@ -1633,10 +1811,339 @@ _string_format_validate_format_modifier_resizable_array
         return;
     }
 
+    // Fill out collection info by peeking the corresponding arguments.
+    format_specifier->collection.tag = STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY;
+    format_specifier->collection.array.array = *( ( array_t** )( state->next_arg ) );
+    format_specifier->collection.array.length = format_specifier->collection.array.array
+                                              ? array_length ( format_specifier->collection.array.array )
+                                              : 0
+                                              ;
+    format_specifier->collection.array.stride = format_specifier->collection.array.array
+                                              ? array_stride ( format_specifier->collection.array.array )
+                                              : 0
+                                              ;
+
+    // Slice? Y/N
+    if ( format_specifier->collection.sliced )
+    {
+        // The upper slice index may now be validated since the array length was
+        // retrieved.
+        if ( format_specifier->collection.slice.to != ( ( u64 )( -1 ) ) )
+        {
+            if ( format_specifier->collection.slice.to > format_specifier->collection.array.length )
+            {
+                format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                return;
+            }
+        }
+        else
+        {
+            format_specifier->collection.slice.to = format_specifier->collection.array.length;
+        }
+    }
+
     // Validation complete.
 
-    format_specifier->container.tag = STRING_FORMAT_CONTAINER_RESIZABLE_ARRAY;
     format_specifier->modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ] = true;
+}
+
+void
+_string_format_validate_format_modifier_slice
+(   state_t*                    state
+,   const char**                read
+,   string_format_specifier_t*  format_specifier
+)
+{
+    // Already present? Y/N
+    if ( format_specifier->modifiers[ STRING_FORMAT_MODIFIER_SLICE ] )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    *read += format_modifiers[ STRING_FORMAT_MODIFIER_SLICE ].length;
+
+    // Out of bounds? Y/N
+    if (  *read
+        + ( sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_END ) - 1 )
+        + 1
+        >= STRING_FORMAT_READ_LIMIT ( state )
+       )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // Enough arguments present? Y/N
+    if ( !state->args_remaining )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // STAGE 1: Parse 'from' index.
+ 
+    if ( !digit ( **read ) )
+    {
+        // CASE: No index provided (use first).
+        if ( _memory_equal ( *read
+                           , STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR
+                           , sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR ) - 1
+                           , STRING_FORMAT_READ_LIMIT ( state )
+                           ))
+        {
+            format_specifier->collection.slice.from = 0;
+            *read += sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR ) - 1;
+        }
+
+        // CASE: Wildcard (from argument).
+        else if ( _memory_equal ( *read
+                                , "?" STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR
+                                , sizeof ( "?" STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR ) - 1
+                                , STRING_FORMAT_READ_LIMIT ( state )
+                                ))
+        {
+            // Arguments remaining? Y/N
+            if ( !state->args_remaining )
+            {
+                format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                return;
+            }
+
+            // Retrieve the value of the next argument in the variadic argument list.
+            // Expects an unsigned integer.
+            format_specifier->collection.slice.from = *( ( u64* )( state->next_arg ) );
+
+            // Consume the argument that was just parsed.
+            _string_format_consume_next_argument ( state );
+
+            *read += sizeof ( "?" STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR ) - 1;
+        }
+
+        // CASE: Other non-numeric character (invalid).
+        else
+        {
+            format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+            return;
+        }
+    }
+    else
+    {
+        // CASE: Explicit index provided.
+        do
+        {
+            // CASE: Continue.
+            if ( digit ( **read ) )
+            {
+                format_specifier->collection.slice.from = 10
+                                                        * format_specifier->collection.slice.from
+                                                        + to_digit ( **read )
+                                                        ;
+                *read += 1;
+            }
+
+            // CASE: Done (index separator provided).
+            else if ( _memory_equal ( *read
+                                    , STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR
+                                    , sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR ) - 1
+                                    , STRING_FORMAT_READ_LIMIT ( state )
+                                    ))
+            {
+                *read += sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR ) - 1;
+                break;
+            }
+
+            // CASE: Done (no index separator provided).
+            else if ( _memory_equal ( *read
+                                    , STRING_FORMAT_MODIFIER_TOKEN_SLICE_END
+                                    , sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_END ) - 1
+                                    , STRING_FORMAT_READ_LIMIT ( state )
+                                    ))
+            {
+                break;
+            }
+
+            // CASE: Done (invalid).
+            else
+            {
+                format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                return;
+            }
+        }
+        while ( *read < STRING_FORMAT_READ_LIMIT ( state ) );
+    }
+
+    // Out of bounds? Y/N
+    if ( *read >= STRING_FORMAT_READ_LIMIT ( state ) )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // STAGE 2: Parse 'to' index.
+
+    if ( !digit ( **read ) )
+    {
+        // CASE: No index provided.
+        if ( _memory_equal ( *read
+                           , STRING_FORMAT_MODIFIER_TOKEN_SLICE_END
+                           , sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_END ) - 1
+                           , STRING_FORMAT_READ_LIMIT ( state )
+                           ))
+        {
+            // CASE: Index separator provided (use last).
+            if ( _memory_equal ( *read - ( sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR ) - 1 )
+                               , STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR
+                               , sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR ) - 1
+                               , STRING_FORMAT_READ_LIMIT ( state )
+                               ))
+            {
+                // Uses -1 as a placeholder value to indicate that the 
+                // collection length must be written once known during the
+                // parsing stage.
+                // TODO: Find a cleaner way of handling this.
+                format_specifier->collection.slice.to = ( ( u64 )( -1 ) );
+            }
+
+            // CASE: No index separator provided (use single index range).
+            else
+            {
+                format_specifier->collection.slice.to = format_specifier->collection.slice.from
+                                                      + 1
+                                                      ;
+            }
+
+            *read += sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_END ) - 1;
+        }
+
+        // CASE: Wildcard (from argument).
+        else if ( _memory_equal ( *read
+                                , "?" STRING_FORMAT_MODIFIER_TOKEN_SLICE_END
+                                , sizeof ( "?" STRING_FORMAT_MODIFIER_TOKEN_SLICE_END ) - 1
+                                , STRING_FORMAT_READ_LIMIT ( state )
+                                ))
+        {
+            // Arguments remaining? Y/N
+            if ( !state->args_remaining )
+            {
+                format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                return;
+            }
+
+            // Retrieve the value of the next argument in the variadic argument list.
+            // Expects an unsigned integer.
+            format_specifier->collection.slice.to = *( ( u64* )( state->next_arg ) );
+
+            // Consume the argument that was just parsed.
+            _string_format_consume_next_argument ( state );
+
+            *read += sizeof ( "?" STRING_FORMAT_MODIFIER_TOKEN_SLICE_END ) - 1;
+        }
+
+        // CASE: Other non-numeric character (invalid).
+        else
+        {
+            format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+            return;
+        }
+    }
+    else
+    {
+        // CASE: Explicit index provided.
+        do
+        {
+            // CASE: Continue.
+            if ( digit ( **read ) )
+            {
+                format_specifier->collection.slice.to = 10
+                                                      * format_specifier->collection.slice.to
+                                                      + to_digit ( **read )
+                                                      ;
+                *read += 1;
+            }
+
+            // CASE: Done (valid).
+            else if ( _memory_equal ( *read
+                                    , STRING_FORMAT_MODIFIER_TOKEN_SLICE_END
+                                    , sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_END ) - 1
+                                    , STRING_FORMAT_READ_LIMIT ( state )
+                                    ))
+            {
+                *read += sizeof ( STRING_FORMAT_MODIFIER_TOKEN_SLICE_END ) - 1;
+                break;
+            }
+
+            // CASE: Done (invalid).
+            else
+            {
+                format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+                return;
+            }
+        }
+        while ( *read < STRING_FORMAT_READ_LIMIT ( state ) );
+    }
+
+    // Out of bounds? Y/N
+    if ( *read >= STRING_FORMAT_READ_LIMIT ( state ) )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // Validate the provided range.
+    if (  format_specifier->collection.slice.from
+        > format_specifier->collection.slice.to
+       )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // STAGE 3: Validate collection.
+    // TODO: Handle this in a more extensible manner.
+    
+    // CASE: String (fixed-length).
+    if ( _memory_equal ( *read
+                       , format_specifiers[ STRING_FORMAT_SPECIFIER_STRING ].value
+                       , format_specifiers[ STRING_FORMAT_SPECIFIER_STRING ].length
+                       , STRING_FORMAT_READ_LIMIT ( state )
+                       ))
+    {}
+
+    // CASE: String (resizable).
+    else if ( _memory_equal ( *read
+                            , format_specifiers[ STRING_FORMAT_SPECIFIER_RESIZABLE_STRING ].value
+                            , format_specifiers[ STRING_FORMAT_SPECIFIER_RESIZABLE_STRING ].length
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
+    {}
+
+    // CASE: Array (fixed-length).
+    else if ( _memory_equal ( *read
+                            , format_modifiers[ STRING_FORMAT_MODIFIER_ARRAY ].value
+                            , format_modifiers[ STRING_FORMAT_MODIFIER_ARRAY ].length
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
+    {}
+
+    // CASE: Array (resizable).
+    else if ( _memory_equal ( *read
+                            , format_modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ].value
+                            , format_modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ].length
+                            , STRING_FORMAT_READ_LIMIT ( state )
+                            ))
+    {}
+
+    // CASE: Other (invalid).
+    else
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // Validation complete.
+    format_specifier->collection.sliced = true;
+    format_specifier->modifiers[ STRING_FORMAT_MODIFIER_SLICE ] = true;
 }
 
 void
@@ -1680,41 +2187,52 @@ _string_format_parse_next_argument
     // Retrieve the value of the next argument in the variadic argument list.
     const arg_t arg = *( state->next_arg );
 
-    // CASE: Container format modifier present?
-    //       YES  =>  Parse and print according to container type.
+    // CASE: Collection format modifier present?
+    //       YES  =>  Parse and print according to collection type.
     //       NO   =>  Parse and print according to format specifier type.
-    if ( format_specifier->container.tag != STRING_FORMAT_CONTAINER_NONE )
+    if ( format_specifier->collection.tag != STRING_FORMAT_COLLECTION_NONE )
     {
         // Parse and print the argument according to the container format
         // modifier.
-        switch ( format_specifier->container.tag )
+        switch ( format_specifier->collection.tag )
         {
-            case STRING_FORMAT_CONTAINER_ARRAY:
+            case STRING_FORMAT_COLLECTION_STRING:
+            case STRING_FORMAT_COLLECTION_RESIZABLE_STRING:
             {
-                const arg_t array_length = state->next_arg[ 1 ];
-                const arg_t array_stride = state->next_arg[ 2 ];
-                _string_format_parse_argument_array ( state , format_specifier , ( void* ) arg , ( u64 ) array_length , ( u64 ) array_stride );
+                _string_format_parse_argument_string ( state
+                                                     , format_specifier
+                                                     , 0
+                                                     );
+                _string_format_consume_next_argument ( state );
+            }
+            break;
 
-                // Consume the arguments that were just printed.
+            case STRING_FORMAT_COLLECTION_ARRAY:
+            {
+                _string_format_parse_argument_array ( state
+                                                    , format_specifier
+                                                    , 0
+                                                    );
                 _string_format_consume_next_argument ( state );
                 _string_format_consume_next_argument ( state );
                 _string_format_consume_next_argument ( state );
             }
             break;
 
-            case STRING_FORMAT_CONTAINER_RESIZABLE_ARRAY: 
+            case STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY:
             {
-                _string_format_parse_argument_resizable_array ( state , format_specifier , ( array_t* ) arg );
-                
-                // Consume the argument that was just printed.
+                _string_format_parse_argument_array ( state
+                                                    , format_specifier
+                                                    , 0
+                                                    );
                 _string_format_consume_next_argument ( state );
             }
             break;
 
             default:
             {
-                // Consume the next argument regardless because something was
-                // **supposed** to be processed here.
+                // Should not happen, but something was **supposed** to have
+                // been processed here, so skip it.
                 _string_format_consume_next_argument ( state );
             }
             break;
@@ -1733,8 +2251,6 @@ _string_format_parse_next_argument
             case STRING_FORMAT_SPECIFIER_FLOATING_POINT_ABBREVIATED:     _string_format_parse_argument_floating_point_abbreviated ( state , format_specifier , ( f64* ) arg )     ;break;
             case STRING_FORMAT_SPECIFIER_FLOATING_POINT_FRACTIONAL_ONLY: _string_format_parse_argument_floating_point_fractional_only ( state , format_specifier , ( f64* ) arg ) ;break;
             case STRING_FORMAT_SPECIFIER_ADDRESS:                        _string_format_parse_argument_address ( state , format_specifier , ( void* ) arg )                       ;break;
-            case STRING_FORMAT_SPECIFIER_STRING:                         _string_format_parse_argument_string ( state , format_specifier , ( char* ) arg )                        ;break;
-            case STRING_FORMAT_SPECIFIER_RESIZABLE_STRING:               _string_format_parse_argument_resizable_string ( state , format_specifier , ( string_t* ) arg )          ;break;
             case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_parse_argument_file_info ( state , format_specifier , ( file_t* ) arg )                   ;break;
             default:                                                                                                                                                               break;
         }
@@ -1810,10 +2326,11 @@ _string_format_parse_argument_floating_point
     // null case must be handled explicitly.
     if ( !arg )
     {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
+        return _string_format_append ( &state->string
+                                     , ""
+                                     , 0
+                                     , format_specifier
+                                     );
     }
 
     char string[ STRING_FLOAT_MAX_LENGTH + 1 ];
@@ -1886,10 +2403,11 @@ _string_format_parse_argument_floating_point_show_fractional
     // null case must be handled explicitly.
     if ( !arg )
     {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
+        return _string_format_append ( &state->string
+                                     , ""
+                                     , 0
+                                     , format_specifier
+                                     );
     }
 
     char string[ STRING_FLOAT_MAX_LENGTH + 1 ];
@@ -1946,10 +2464,11 @@ _string_format_parse_argument_floating_point_abbreviated
     // null case must be handled explicitly.
     if ( !arg )
     {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
+        return _string_format_append ( &state->string
+                                     , ""
+                                     , 0
+                                     , format_specifier
+                                     );
     }
 
     char string[ STRING_FLOAT_MAX_LENGTH + 1 ];
@@ -2006,10 +2525,11 @@ _string_format_parse_argument_floating_point_fractional_only
     // null case must be handled explicitly.
     if ( !arg )
     {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
+        return _string_format_append ( &state->string
+                                     , ""
+                                     , 0
+                                     , format_specifier
+                                     );
     }
 
     char string[ STRING_FLOAT_MAX_LENGTH + 1 ];
@@ -2104,53 +2624,15 @@ _string_format_parse_argument_character
 {
     if ( !whitespace ( arg ) && ( arg < 32 || arg > 126 ) )
     {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
+        return _string_format_append ( &state->string
+                                     , ""
+                                     , 0
+                                     , format_specifier
+                                     );
     }
     return _string_format_append ( &state->string
                                  , &arg
                                  , 1
-                                 , format_specifier
-                                 );
-}
-
-u64
-_string_format_parse_argument_string
-(   state_t*                            state
-,   const string_format_specifier_t*    format_specifier
-,   const char*                         arg
-)
-{
-    const char* string = arg ? arg : "";
-    const u64 length = _string_length ( string );
-    return _string_format_append ( &state->string
-                                 , string
-                                 , length
-                                 , format_specifier
-                                 );
-}
-
-u64
-_string_format_parse_argument_resizable_string
-(   state_t*                            state
-,   const string_format_specifier_t*    format_specifier
-,   const string_t*                     arg
-)
-{
-    if ( !arg )
-    {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
-    }
-
-    const u64 length = string_length ( arg );
-    return _string_format_append ( &state->string
-                                 , arg
-                                 , length
                                  , format_specifier
                                  );
 }
@@ -2165,10 +2647,11 @@ _string_format_parse_argument_file_info
     // Null argument or file handle? Y/N
     if ( !arg || !arg->handle )
     {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
+        return _string_format_append ( &state->string
+                                     , ""
+                                     , 0
+                                     , format_specifier
+                                     );
     }
 
     const u64 old_length = string_length ( state->string );
@@ -2250,21 +2733,49 @@ _string_format_parse_argument_file_info
 }
 
 u64
+_string_format_parse_argument_string
+(   state_t*                            state
+,   const string_format_specifier_t*    format_specifier
+,   const char*                         arg
+)
+{
+    u64 string_from;
+    u64 string_to;
+    if (   format_specifier->collection.sliced
+        && (   format_specifier->collection.tag == STRING_FORMAT_COLLECTION_STRING
+            || format_specifier->collection.tag == STRING_FORMAT_COLLECTION_RESIZABLE_STRING
+           ))
+    {
+        string_from = format_specifier->collection.slice.from;
+        string_to = format_specifier->collection.slice.to;
+    }
+    else
+    {
+        string_from = 0;
+        string_to = format_specifier->collection.string.length;
+    }
+    return _string_format_append ( &state->string
+                                 , format_specifier->collection.string.string + string_from
+                                 , string_to - string_from
+                                 , format_specifier
+                                 );
+}
+
+u64
 _string_format_parse_argument_array
 (   state_t*                            state
 ,   const string_format_specifier_t*    format_specifier
-,   const void*                         array
-,   const u64                           array_length
-,   const u64                           array_stride
+,   const void*                         arg
 )
 {
     // Null argument? Y/N
-    if ( !array )
+    if ( !format_specifier->collection.array.array )
     {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
+        return _string_format_append ( &state->string
+                                     , ""
+                                     , 0
+                                     , format_specifier
+                                     );
     }
 
     const u64 old_length = string_length ( state->string );
@@ -2272,11 +2783,22 @@ _string_format_parse_argument_array
     // Print array start token.
     _string_append ( state->string , "{ " );
 
-    for ( u64 i = 0; i < array_length; ++i )
+    // Set start and end index (accounts for slice modifier).
+    const u64 array_from = ( format_specifier->collection.sliced )
+                         ? format_specifier->collection.slice.from
+                         : 0
+                         ;
+    const u64 array_to = ( format_specifier->collection.sliced )
+                       ? format_specifier->collection.slice.to
+                       : format_specifier->collection.array.length
+                       ;
+
+    // Traverse the array.
+    for ( u64 i = array_from; i < array_to; ++i )
     {
         // Retrieve the array element address.
-        const void* element = ( const void* )( ( ( u64 ) array )
-                                             + i * array_stride
+        const void* element = ( const void* )( ( ( u64 ) format_specifier->collection.array.array )
+                                             + i * format_specifier->collection.array.stride
                                              );
         
         // Attempt to parse and print the value at the address according to the
@@ -2286,7 +2808,7 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_RAW:
             {
                 u64 value;
-                switch ( array_stride )
+                switch ( format_specifier->collection.array.stride )
                 {
                     case sizeof ( u8 ):  value = *( ( u8* ) element )  ;break;
                     case sizeof ( u16 ): value = *( ( u16* ) element ) ;break;
@@ -2310,7 +2832,7 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_INTEGER:
             {
                 i64 value;
-                switch ( array_stride )
+                switch ( format_specifier->collection.array.stride )
                 {
                     case sizeof ( i8 ):  value = *( ( i8* ) element )  ;break;
                     case sizeof ( i16 ): value = *( ( i16* ) element ) ;break;
@@ -2325,7 +2847,7 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_FLOATING_POINT:
             {
                 f64 value;
-                switch ( array_stride )
+                switch ( format_specifier->collection.array.stride )
                 {
                     case sizeof ( f32 ): value = *( ( f32* ) element ) ;break;
                     case sizeof ( f64 ): value = *( ( f64* ) element ) ;break;
@@ -2338,7 +2860,7 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_FLOATING_POINT_SHOW_FRACTIONAL:
             {
                 f64 value;
-                switch ( array_stride )
+                switch ( format_specifier->collection.array.stride )
                 {
                     case sizeof ( f32 ): value = *( ( f32* ) element ) ;break;
                     case sizeof ( f64 ): value = *( ( f64* ) element ) ;break;
@@ -2351,7 +2873,7 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_FLOATING_POINT_ABBREVIATED:
             {
                 f64 value;
-                switch ( array_stride )
+                switch ( format_specifier->collection.array.stride )
                 {
                     case sizeof ( f32 ): value = *( ( f32* ) element ) ;break;
                     case sizeof ( f64 ): value = *( ( f64* ) element ) ;break;
@@ -2364,7 +2886,7 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_FLOATING_POINT_FRACTIONAL_ONLY:
             {
                 f64 value;
-                switch ( array_stride )
+                switch ( format_specifier->collection.array.stride )
                 {
                     case sizeof ( f32 ): value = *( ( f32* ) element ) ;break;
                     case sizeof ( f64 ): value = *( ( f64* ) element ) ;break;
@@ -2377,7 +2899,7 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_ADDRESS:
             {
                 void* value;
-                switch ( array_stride )
+                switch ( format_specifier->collection.array.stride )
                 {
                     case sizeof ( void* ): value = *( ( void** ) element );break;
                     default:               value = 0                      ;break;
@@ -2388,28 +2910,16 @@ _string_format_parse_argument_array
 
             case STRING_FORMAT_SPECIFIER_STRING:
             {
-                char* value;
-                switch ( array_stride )
-                {
-                    case sizeof ( char* ): value = *( ( char** ) element );break;
-                    default:               value = 0                      ;break;
-                }
                 _string_append ( state->string , "`" );
-                _string_format_parse_argument_string ( state , format_specifier , value );
+                _string_format_parse_argument_string ( state , format_specifier , 0 );
                 _string_append ( state->string , "`" );
             }
             break;
 
             case STRING_FORMAT_SPECIFIER_RESIZABLE_STRING:
             {
-                char* value;
-                switch ( array_stride )
-                {
-                    case sizeof ( char* ): value = *( ( char** ) element );break;
-                    default:               value = 0                      ;break;
-                }
                 _string_append ( state->string , "`" );
-                _string_format_parse_argument_resizable_string ( state , format_specifier , value );
+                _string_format_parse_argument_string ( state , format_specifier , 0 );
                 _string_append ( state->string , "`" );
             }
             break;
@@ -2417,7 +2927,7 @@ _string_format_parse_argument_array
             case STRING_FORMAT_SPECIFIER_FILE_INFO:
             {
                 file_t* value;
-                switch ( array_stride )
+                switch ( format_specifier->collection.array.stride )
                 {
                     case sizeof ( file_t* ): value = *( ( file_t** ) element );break;
                     default:                 value = 0                        ;break;
@@ -2432,7 +2942,7 @@ _string_format_parse_argument_array
         }
 
         // Print array element separator token.
-        if ( i < array_length - 1 )
+        if ( i < array_to - 1 )
         {
             _string_append ( state->string , ", " );
         }
@@ -2442,29 +2952,6 @@ _string_format_parse_argument_array
     _string_append ( state->string , " }" );
 
     return string_length ( state->string ) - old_length;
-}
-
-u64
-_string_format_parse_argument_resizable_array
-(   state_t*                            state
-,   const string_format_specifier_t*    format_specifier
-,   const array_t*                      arg
-)
-{
-    // Null argument? Y/N
-    if ( !arg )
-    {
-        return _string_format_parse_argument_string ( state
-                                                    , format_specifier
-                                                    , 0
-                                                    );
-    }
-    return _string_format_parse_argument_array ( state
-                                               , format_specifier
-                                               , arg
-                                               , array_length ( arg )
-                                               , array_stride ( arg )
-                                               );
 }
 
 u64
@@ -2521,13 +3008,11 @@ _string_format_append
             // characters.
             if ( !format_specifier->padding.wildcard_value )
             {
-                const char* multi_character_escape_token = "\\" STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER;
-                const u64 multi_character_escape_token_length = _string_length ( multi_character_escape_token );
                 u64 index_;
                 while ( string_contains ( format_specifier->padding.value.value + index
                                         , format_specifier->padding.value.length - index
-                                        , multi_character_escape_token
-                                        , multi_character_escape_token_length
+                                        , "\\'"
+                                        , sizeof ( "\\'" ) - 1
                                         , false
                                         , &index_
                                         ))
@@ -2583,13 +3068,11 @@ _string_format_append
             // characters.
             if ( !format_specifier->padding.wildcard_value )
             {
-                const char* multi_character_escape_token = "\\" STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER;
-                const u64 multi_character_escape_token_length = _string_length ( multi_character_escape_token );
                 u64 index_;
                 while ( string_contains ( format_specifier->padding.value.value + index
                                         , format_specifier->padding.value.length - index
-                                        , multi_character_escape_token
-                                        , multi_character_escape_token_length
+                                        , "\\'"
+                                        , sizeof ( "\\'" ) - 1
                                         , false
                                         , &index_
                                         ))

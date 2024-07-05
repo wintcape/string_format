@@ -45,6 +45,7 @@ typedef enum
 ,   STRING_FORMAT_MODIFIER_RADIX
 ,   STRING_FORMAT_MODIFIER_ARRAY
 ,   STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY
+,   STRING_FORMAT_MODIFIER_SLICE
 
 ,   STRING_FORMAT_MODIFIER_COUNT
 }
@@ -74,6 +75,8 @@ STRING_FORMAT_MODIFIER;
 #define STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING               "S"    /** @brief Format specifier: resizable string. */
 #define STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO                      "file" /** @brief Format specifier: file info. */
 
+#define STRING_FORMAT_MODIFIER_TOKEN_WILDCARD                        "?"    /** @brief Format modifier wildcard. */
+
 #define STRING_FORMAT_MODIFIER_TOKEN_PAD                             "P"    /** @brief Format modifier: pad. */
 #define STRING_FORMAT_MODIFIER_TOKEN_PAD_MINIMUM                     "p"    /** @brief Format modifier: pad (minimum width). */
 #define STRING_FORMAT_MODIFIER_TOKEN_SHOW_SIGN                       "+"    /** @brief Format modifier: show sign. */
@@ -83,10 +86,10 @@ STRING_FORMAT_MODIFIER;
 #define STRING_FORMAT_MODIFIER_TOKEN_ARRAY                           "a"    /** @brief Format modifier: array. */
 #define STRING_FORMAT_MODIFIER_TOKEN_RESIZABLE_ARRAY                 "A"    /** @brief Format modifier: resizable array. */
 
-#define STRING_FORMAT_MODIFIER_TOKEN_WILDCARD                        "?"    /** @brief Format modifier: wildcard. */
-#define STRING_FORMAT_MODIFIER_TOKEN_LEFT                            "l"    /** @brief Format modifier: left. */
-#define STRING_FORMAT_MODIFIER_TOKEN_RIGHT                           "r"    /** @brief Format modifier: right. */
-#define STRING_FORMAT_MODIFIER_TOKEN_MULTI_CHARACTER_DELIMITER       "'"    /** @brief Format modifier: multi-character delimiter. */
+/** @brief Format modifier: slice. */
+#define STRING_FORMAT_MODIFIER_TOKEN_SLICE_BEGIN                     "["    /** @brief Slice begin. */
+#define STRING_FORMAT_MODIFIER_TOKEN_SLICE_END                       "]"    /** @brief Slice end. */
+#define STRING_FORMAT_MODIFIER_TOKEN_SLICE_INDEX_SEPARATOR           ":"    /** @brief Slice index separator. */
 
 /**
  * @brief String format function.
@@ -95,7 +98,7 @@ STRING_FORMAT_MODIFIER;
  *
  * Uses dynamic memory allocation. Call string_destroy to free.
  * 
- * FORMAT SPECIFIERS :
+ * ============================= FORMAT SPECIFIERS =============================
  * 
  * %% : Ignore (i.e. "%" character).
  * %u : Unsigned.
@@ -122,10 +125,12 @@ STRING_FORMAT_MODIFIER;
  *      functions. Length is fetched at runtime via O(1) string_length.
  * %file : File info. The corresponding argument must be a file handle.
  *      
- * FORMAT MODIFIERS :
+ * ============================= FORMAT MODIFIERS ==============================
  * 
  * These may each be used once preceding a format specifier. They only apply
  * to arguments of a sensible type for their purpose.
+ * 
+ *                                  PADDING
  * 
  * - Pl<character><number>{} : Fix print width to <number>. If needed, pad with
  *                             <character> to the left.
@@ -147,28 +152,75 @@ STRING_FORMAT_MODIFIER;
  *                             Works with any number of format specifiers
  *                             contained within the braces. Can be nested.
  *                             Use `\{` and `\}` to print braces.
- * - + : Always print sign. Default behavior is to print the sign only for a
- *       negative number.
- *       Works only with signed numeric format specifiers: %f, %F, %e, %i.
- * - - : Never print sign. Default behavior is to print the sign only for a
- *       negative number.
- *       Works only with signed numeric format specifiers: %f, %F, %e, %i.
+ * - Pl'<string>'<number>{} : Fix print width to <number>. If needed, pad with
+ *                            <string> to the left. Use `\'` to print
+ *                            apostrophe.
+ *                            Works with any number of format specifiers
+ *                            contained within the braces. Can be nested.
+ *                            Use `\{` and `\}` to print braces.
+ * - Pr'<string>'<number>{} : Fix print width to <number>. If needed, pad with
+ *                            <string> to the right. Use `\'` to print
+ *                            apostrophe.
+ *                            Works with any number of format specifiers
+ *                            contained within the braces. Can be nested.
+ *                            Use `\{` and `\}` to print braces.
+ * - pl'<string>'<number>{} : Set minimum print width to <number>. If needed,
+ *                            pad with <string> to the left. Use `\'` to print
+ *                            apostrophe.
+ *                            Works with any number of format specifiers
+ *                            contained within the braces. Can be nested.
+ *                            Use `\{` and `\}` to print braces.
+ * - pr'<string>'<number>{} : Set minimum print width to <number>. If needed,
+ *                            pad with <string> to the right. Use `\'` to print
+ *                            apostrophe.
+ *                            Works with any number of format specifiers
+ *                            contained within the braces. Can be nested.
+ *                            Use `\{` and `\}` to print braces.
+ * 
+ *                                  NUMERIC
+ * 
+ * - +         : Always print sign. Default behavior is to print the sign only
+ *               for a negative number.
+ *               Works only with signed numeric format specifiers: %f, %F, %e,
+ *                                                                 %i.
+ * - -         : Never print sign. Default behavior is to print the sign only
+ *               for a negative number.
+ *               Works only with signed numeric format specifiers: %f, %F, %e,
+ *                                                                 %i.
  * - .<number> : Fix fractional precision to <number> decimal places.
  *               Works only with floating point format specifiers: %f, %F, %e,
  *                                                                 %d.
  * - r<number> : Print integer in radix <number> format.
- *               Works only with integral format specifiers: %i, %u.
- * - A : Resizable array. The argument must be an array created with the
- *       _array_create class of functions.
- *       Works with any format specifier; the format specifier specifies the
- *       print method for each array element.
- * - a : Fixed-length array. Consumes **three** arguments, in the following
- *       order: (1) address of the array, (2) array length, (3) array stride.
- *       Works with any format specifier; the format specifier specifies the
- *       print method for each array element.
- * - ? : Wildcard. Use in-place of <character> or <number> in any viable format
- *       modifier to set the value from an argument rather than from the format
- *       string itself. Consumes **one** additional argument.
+ *               Works only with integral format specifiers:       %i, %u.
+ * 
+ *                                COLLECTION
+ * 
+ * - A                  : Resizable array. The argument must be an array created
+ *                        with the _array_create class of functions.
+ *                        Works with any format specifier; the format specifier
+ *                        specifies the print method for each array element.
+ * - a                  : Fixed-length array. Consumes **three** arguments, in
+ *                        the following order: (1) array (address)
+ *                                             (2) array length
+ *                                             (3) array stride
+ *                        Works with any format specifier; the format specifier
+ *                        specifies the print method for each array element.
+ * - [<number>]          : Slice. Prints a single range of elements from a
+ *                         collection.
+ *                         Must ** immediately precede** a collection-based
+ *                         format specifier: %s, %a, %S, %A.
+ * - [<number>:<number>] : Slice. Prints a provided range of elements from a
+ *                         collection.
+ *                         Must ** immediately precede** a collection-based
+ *                         format specifier: %s, %a, %S, %A.
+ * 
+ *                                 WILDCARD
+ * 
+ * - ? : Wildcard. Use in-place of any <value> documented above in any viable
+ *       format modifier to set the value from an argument rather than from the
+ *       format string itself. Consumes **one** additional argument. Use `\?` to
+ *       print question mark as a <character> or within a <string> without
+ *       matching a wildcard.
  *
  * @param format Formatting string.
  * @param args Variadic argument list (see common/args.h).

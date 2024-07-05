@@ -7,7 +7,7 @@
 
 #define VERSION_MAJOR   0 /** @brief Major version number. */
 #define VERSION_MINOR   0 /** @brief Minor version number. */
-#define VERSION_PATCH   4 /** @brief Patch version number. */
+#define VERSION_PATCH   5 /** @brief Patch version number. */
 
 #define VERSION_RELEASE 0 /** @brief Release build? Y/N */
 #define VERSION_DEBUG   1 /** @brief Debug mode? Y/N */

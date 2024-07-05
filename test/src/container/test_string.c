@@ -2676,6 +2676,281 @@ test_string_format
     EXPECT ( memory_equal ( string , "\\\\\\\\\\\\\\\\\\\\\\\\\\101" , string_length ( string ) ) );
     string_destroy ( string );
 
+    // TEST 78: Array slice format modifier prints the entire array if supplied no start and end index.
+    string = string_format ( "%[:]ai" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 79: Array slice format modifier prints the correct range of elements from the array.
+    string = string_format ( "%Pl03r2[8:10]ai\n%Pl03r2[10:12]ai\n%Pl03r2[12:14]ai" , const_i8_array_in , 16 , sizeof ( i8 ) , const_i8_array_in , 16 , sizeof ( i8 ) , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ 000, 001 }\n{ 010, 011 }\n{ 100, 101 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ 000, 001 }\n{ 010, 011 }\n{ 100, 101 }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 80: Array slice format modifier prints a single array element if no index separator is provided.
+    string = string_format ( "%Pl08r2[8]ai" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ 00000000 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ 00000000 }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 81: Array slice format modifier prints no array elements if start and end index are identical.
+    string = string_format ( "%[0:0]ai" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{  }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{  }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 82: Array slice format modifier supports wildcards for either index of the range.
+    string = string_format ( "%[?:]ai" , 8 , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ 0, 1, 2, 3, 4, 5, 6, 7 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ 0, 1, 2, 3, 4, 5, 6, 7 }" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[:?]ai" , 9 , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ -8, -7, -6, -5, -4, -3, -2, -1, 0 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ -8, -7, -6, -5, -4, -3, -2, -1, 0 }" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x3 )
+    string = string_format ( "%[?:?]ai" , 0 , 16 , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 83: Resizable array slice format modifier prints the entire array if supplied no start and end index.
+    string = string_format ( "%[:]Ai" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 84: Resizable array slice format modifier prints the correct range of elements from the array.
+    string = string_format ( "%Pl03r2[8:10]Ai\n%Pl03r2[10:12]Ai\n%Pl03r2[12:14]Ai" , i8_array_in , i8_array_in , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ 000, 001 }\n{ 010, 011 }\n{ 100, 101 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ 000, 001 }\n{ 010, 011 }\n{ 100, 101 }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 85: Resizable array slice format modifier prints a single array element if no index separator is provided.
+    string = string_format ( "%Pl08r2[8]Ai" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ 00000000 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ 00000000 }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 86: Resizable array slice format modifier prints no array elements if start and end index are identical.
+    string = string_format ( "%[0:0]Ai" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{  }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{  }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 87: Resizable array slice format modifier supports wildcards for either index of the range.
+    string = string_format ( "%[?:]Ai" , 8 , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ 0, 1, 2, 3, 4, 5, 6, 7 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ 0, 1, 2, 3, 4, 5, 6, 7 }" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[:?]Ai" , 9 , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ -8, -7, -6, -5, -4, -3, -2, -1, 0 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ -8, -7, -6, -5, -4, -3, -2, -1, 0 }" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x3 )
+    string = string_format ( "%[?:?]Ai" , 0 , array_length ( i8_array_in ) , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "{ -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "{ -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 }" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 88: String slice format modifier prints the entire string if supplied no start and end index.
+    string = string_format ( "%[:]s" , &"abcdefghijklmnopqrstuvwxyz" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "abcdefghijklmnopqrstuvwxyz" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "abcdefghijklmnopqrstuvwxyz" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 89: String slice format modifier prints the correct range of characters from the string.
+    string = string_format ( "%[1:4]s%[0:2]s%[9:12]s" , const_string_in , const_string_in , const_string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "ellHeld!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "ellHeld!" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 90: String slice format modifier prints a single character if no index separator is provided.
+    string = string_format ( "%[7]s" , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "o" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "o" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 91: String slice format modifier prints nothing if start and end index are identical.
+    string = string_format ( "%[0:0]s" , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 92: String slice format modifier supports wildcards for either index of the range.
+    string = string_format ( "%[?:]s" , 6 , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "world!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "world!" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[:?]s" , 5 , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x3 )
+    string = string_format ( "%[?:?]s" , 0 , _string_length ( const_string_in ) , const_string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( const_string_in ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , const_string_in , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 93: Resizable string slice format modifier prints the entire string if supplied no start and end index.
+    string = string_format ( "%[:]S" , string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( string_length ( string_in ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , string_in , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 94: Resizable string slice format modifier prints the correct range of characters from the string.
+    string = string_format ( "%[1:4]S%[0:2]S%[9:12]S" , string_in , string_in , string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "ellHeld!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "ellHeld!" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 95: Resizable string slice format modifier prints a single character if no index separator is provided.
+    string = string_format ( "%[7]S" , string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "o" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "o" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 96: Resizable string slice format modifier prints nothing if start and end index are identical.
+    string = string_format ( "%[0:0]S" , string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 97: Resizable string slice format modifier supports wildcards for either index of the range.
+    string = string_format ( "%[?:]S" , 6 , string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "world!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "world!" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[:?]S" , 5 , string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x3 )
+    string = string_format ( "%[?:?]S" , 0 , string_length ( string_in ) , string_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( string_length ( string_in ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , string_in , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 98: Slice format modifier is invalidated if no lower index is provided.
+    string = string_format ( "%[]s" , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[]s" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[ ]s" , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[ ]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[ ]s" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x3 )
+    string = string_format ( "%[0  ]s" , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[0  ]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[0  ]s" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 99: Slice format modifier is invalidated if the provided range is invalid.
+    //          (Lower index exceeds upper index)
+    string = string_format ( "%[1:0]s" , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[1:0]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[1:0]s" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[11:10]s" , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[11:10]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[11:10]s" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 100: Slice format modifier is invalidated if the provided range is invalid.
+    //           (Either index negative)
+    string = string_format ( "%[-1:]s" , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[-1:]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[-1:]s" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[:-1]s" , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[:-1]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[:-1]s" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 101: Slice format modifier is invalidated if the provided range is invalid.
+    //           (Either index exceeds collection length).
+    string = string_format ( "%[?]s" , _string_length ( "Hello world!" ) + 1 , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[?]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[?]s" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[:?]s" , _string_length ( "Hello world!" ) + 1 , &"Hello world!" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[:?]s" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[:?]s" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 102: Slice format modifier is invalidated if not immediately **succeeded** by an array or string format specifier.
+    string = string_format ( "%.2[7]F" , float_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%.2[7]F" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%.2[7]F" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%.2A[7]F" , f32_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%.2A[7]F" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%.2A[7]F" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 103: Array and resizable array format modifiers are mutually-exclusive.
+    string = string_format ( "%aAi" , 0 , 0 , 0 , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%aAi" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%aAi" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%Aai" , 0 , 0 , 0 , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%Aai" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%Aai" , string_length ( string ) ) );
+    string_destroy ( string );
+
     // TODO: Add support for passing a single backslash as a multi-character
     //       padding string. Currently, this does not work because the
     //       terminating delimiter matches against its escape sequence
