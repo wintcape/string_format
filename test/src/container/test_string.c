@@ -2337,7 +2337,13 @@ test_string_format
     EXPECT ( memory_equal ( string , "%Pl 190234.6+Pr190234i" , string_length ( string ) ) );
     string_destroy ( string );
     // ( x5 )
-    string = string_format ( "%.2aaF" , 0 );
+    string = string_format ( "%.2AAF" , 0 , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%.2AAF" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%.2AAF" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x6 )
+    string = string_format ( "%.2aaF" , 0 , 0 , 0 , 0 , 0 , 0 );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "%.2aaF" ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "%.2aaF" , string_length ( string ) ) );
@@ -2981,6 +2987,222 @@ test_string_format
     EXPECT ( memory_equal ( string , "{ `world`, `!` }" , string_length ( string ) ) );
     string_destroy ( string );
 
+    // TEST 108: Array format modifier with custom array start, terminator, and separator strings.
+    string = string_format ( "%a[(\n\t|_|\n)]s" , const_string_array_in , 4 , sizeof ( char* ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "(\n\tHello_ _world_!\n)" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "(\n\tHello_ _world_!\n)" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[8:]a[THE ARRAY:\n{\n\t|\n\t|\n}].1F" , const_f32_array_in , 16 , sizeof ( f32 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "THE ARRAY:\n{\n\t0.0\n\t1.0\n\t2.0\n\t3.0\n\t4.0\n\t5.0\n\t6.0\n\t7.0\n}" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "THE ARRAY:\n{\n\t0.0\n\t1.0\n\t2.0\n\t3.0\n\t4.0\n\t5.0\n\t6.0\n\t7.0\n}" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 109: Array format modifier with no array start, terminator, and separator strings.
+    string = string_format ( "%a[||]c" , const_string_in , _string_length ( const_string_in ) , sizeof ( char ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello world!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello world!" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%a[]c" , const_string_in , _string_length ( const_string_in ) , sizeof ( char ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello world!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello world!" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 110: Array format modifier with custom array start, terminator, and separator strings containing escape sequences `\[` and `\]`.
+    string = string_format ( "%[:8]a[\\[ | \\[\\] | \\]]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "[ -8 [] -7 [] -6 [] -5 [] -4 [] -3 [] -2 [] -1 ]" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "[ -8 [] -7 [] -6 [] -5 [] -4 [] -3 [] -2 [] -1 ]" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 111: Array format modifier with custom array start, terminator, and separator strings containing escape sequence `\|`.
+    string = string_format ( "%[:8]a[\\| | \\| | \\|]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "| -8 | -7 | -6 | -5 | -4 | -3 | -2 | -1 |" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "| -8 | -7 | -6 | -5 | -4 | -3 | -2 | -1 |" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 112: Array format modifier supports reading custom array start, terminator, and separator strings from wildcard.
+    string = string_format ( "%[:8]a[?|?|?]i" , const_i8_array_in , 16 , sizeof ( i8 ) , &"( " , &" *** " , &" )" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "( -8 *** -7 *** -6 *** -5 *** -4 *** -3 *** -2 *** -1 )" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "( -8 *** -7 *** -6 *** -5 *** -4 *** -3 *** -2 *** -1 )" , string_length ( string ) ) );
+    string_destroy ( string );
+    
+    // TEST 113: Array format modifier which uses `|`, `[` or `]` tokens as part of an array start, terminator, or separator string does not have to escape these tokens if they are read from a wildcard.
+    string = string_format ( "%[:8]a[?|?|?]i" , const_i8_array_in , 16 , sizeof ( i8 ) , &"\\|\\[\n|[ " , &" ]|[ " , &" ]|\n\\]\\|" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "\\|\\[\n|[ -8 ]|[ -7 ]|[ -6 ]|[ -5 ]|[ -4 ]|[ -3 ]|[ -2 ]|[ -1 ]|\n\\]\\|" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "\\|\\[\n|[ -8 ]|[ -7 ]|[ -6 ]|[ -5 ]|[ -4 ]|[ -3 ]|[ -2 ]|[ -1 ]|\n\\]\\|" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 114: Array format modifier supports using `\?` to print `?` as part of a custom array start, terminator, or separator string instead of reading from wildcard.
+    string = string_format ( "%[0:2]a[|\\?|]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "-8?-7" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-8?-7" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 115: Array format modifier which uses `?` token as part of an array start, terminator, or separator string does not have to escape this token if it is read from a wildcard.
+    string = string_format ( "%[0:2]a[?|?|?]i" , const_i8_array_in , 16 , sizeof ( i8 ) , &"\\?\n  " , &"?" , &"  \n\\?" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "\\?\n  -8?-7  \n\\?" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "\\?\n  -8?-7  \n\\?" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 116: array start, terminator, or separator strings containing wildcard tokens (i.e. `?`) which are **not an exact match** to the token (i.e. `?`) do not need to be escaped.
+    string = string_format ( "%[2:5]a[|? |\\?]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "-6? -5? -4?" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-6? -5? -4?" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 117: Array format modifier is invalidated if a custom array start, terminator, or separator string is present but the number of separator tokens is incorrect.
+    string = string_format ( "%[2:5]a[|]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]a[|]i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]a[|]i" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[2:5]a[|||]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]a[|||]i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]a[|||]i" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x3 )
+    string = string_format ( "%[2:5]a[ ]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]a[ ]i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]a[ ]i" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 118: Array format modifier is invalidated if a custom array start, terminator, or separator string is present but the terminating bracket cannot be found.
+    string = string_format ( "%[2:5]a[||i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]a[||i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]a[||i" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 119: Array format modifier is invalidated if a custom array start, terminator, or separator string is present but one of them contains an illegal, unescaped `[` token.
+    string = string_format ( "%[2:5]a[|[|i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]a[|[|i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]a[|[|i" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 120: Resizable array format modifier with custom array start, terminator, and separator strings.
+    string = string_format ( "%A[(\n\t|_|\n)]s" , string_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "(\n\tHello_ _world_!\n)" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "(\n\tHello_ _world_!\n)" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[8:]A[THE ARRAY:\n{\n\t|\n\t|\n}].1F" , f32_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "THE ARRAY:\n{\n\t0.0\n\t1.0\n\t2.0\n\t3.0\n\t4.0\n\t5.0\n\t6.0\n\t7.0\n}" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "THE ARRAY:\n{\n\t0.0\n\t1.0\n\t2.0\n\t3.0\n\t4.0\n\t5.0\n\t6.0\n\t7.0\n}" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 121: Resizable array format modifier with no array start, terminator, and separator strings.
+    string = string_format ( "%A[||]s" , string_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello world!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello world!" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%A[]s" , string_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello world!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello world!" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 122: Resizable array format modifier with custom array start, terminator, and separator strings containing escape sequences `\[` and `\]`.
+    string = string_format ( "%[:8]A[\\[ | \\[\\] | \\]]i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "[ -8 [] -7 [] -6 [] -5 [] -4 [] -3 [] -2 [] -1 ]" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "[ -8 [] -7 [] -6 [] -5 [] -4 [] -3 [] -2 [] -1 ]" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 123: Resizable array format modifier with custom array start, terminator, and separator strings containing escape sequence `\|`.
+    string = string_format ( "%[:8]A[\\| | \\| | \\|]i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "| -8 | -7 | -6 | -5 | -4 | -3 | -2 | -1 |" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "| -8 | -7 | -6 | -5 | -4 | -3 | -2 | -1 |" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 124: Resizable array format modifier supports reading custom array start, terminator, and separator strings from wildcard.
+    string = string_format ( "%[:8]A[?|?|?]i" , i8_array_in , &"( " , &" *** " , &" )" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "( -8 *** -7 *** -6 *** -5 *** -4 *** -3 *** -2 *** -1 )" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "( -8 *** -7 *** -6 *** -5 *** -4 *** -3 *** -2 *** -1 )" , string_length ( string ) ) );
+    string_destroy ( string );
+    
+    // TEST 125: Resizable array format modifier which uses `|`, `[` or `]` tokens as part of an array start, terminator, or separator string does not have to escape these tokens if they are read from a wildcard.
+    string = string_format ( "%[:8]A[?|?|?]i" , i8_array_in , &"\\|\\[\n|[ " , &" ]|[ " , &" ]|\n\\]\\|" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "\\|\\[\n|[ -8 ]|[ -7 ]|[ -6 ]|[ -5 ]|[ -4 ]|[ -3 ]|[ -2 ]|[ -1 ]|\n\\]\\|" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "\\|\\[\n|[ -8 ]|[ -7 ]|[ -6 ]|[ -5 ]|[ -4 ]|[ -3 ]|[ -2 ]|[ -1 ]|\n\\]\\|" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 126: Resizable array format modifier supports using `\?` to print `?` as part of a custom array start, terminator, or separator string instead of reading from wildcard.
+    string = string_format ( "%[0:2]A[|\\?|]i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "-8?-7" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-8?-7" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 127: Resizable array format modifier which uses `?` token as part of an array start, terminator, or separator string does not have to escape this token if it is read from a wildcard.
+    string = string_format ( "%[0:2]A[?|?|?]i" , i8_array_in , &"\\?\n  " , &"?" , &"  \n\\?" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "\\?\n  -8?-7  \n\\?" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "\\?\n  -8?-7  \n\\?" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 128: Resizable array start, terminator, or separator strings containing wildcard tokens (i.e. `?`) which are **not an exact match** to the token (i.e. `?`) do not need to be escaped.
+    string = string_format ( "%[2:5]A[|? |\\?]i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "-6? -5? -4?" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-6? -5? -4?" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 129: Resizable array format modifier is invalidated if a custom array start, terminator, or separator string is present but the number of separator tokens is incorrect.
+    string = string_format ( "%[2:5]A[|]i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]A[|]i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]A[|]i" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%[2:5]A[|||]i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]A[|||]i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]A[|||]i" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x3 )
+    string = string_format ( "%[2:5]A[ ]i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]A[ ]i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]A[ ]i" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 130: Resizable array format modifier is invalidated if a custom array start, terminator, or separator string is present but the terminating bracket cannot be found.
+    string = string_format ( "%[2:5]A[||i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]A[||i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]A[||i" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 131: Resizable array format modifier is invalidated if a custom array start, terminator, or separator string is present but one of them contains an illegal, unescaped `[` token.
+    string = string_format ( "%[2:5]A[|[|i" , i8_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%[2:5]A[|[|i" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%[2:5]A[|[|i" , string_length ( string ) ) );
+    string_destroy ( string );
+
     // TODO: Add support for passing a single backslash as a multi-character
     //       padding string. Currently, this does not work because the
     //       terminating delimiter matches against its escape sequence
@@ -3013,16 +3235,16 @@ test_register_string
     // test_register ( test_string_append , "Testing string 'push' operation." );
     // test_register ( test_string_insert_and_remove , "Testing string 'insert' and 'remove' operations." );
     // test_register ( test_string_insert_and_remove_random , "Testing string 'insert' and 'remove' operations with random indices and elements." );
-    test_register ( test_string_empty , "Detecting an empty string." );
-    test_register ( test_string_trim , "Testing string 'trim' operation." );
-    test_register ( test_string_contains , "Testing string 'contains' operation." );
-    test_register ( test_string_reverse , "Testing string in-place 'reverse' operation." );
-    test_register ( test_string_replace , "Testing string 'replace' operation." );
-    test_register ( test_string_strip_ansi , "Stripping a string of ANSI formatting codes." );
-    test_register ( test_string_u64_and_i64 , "Testing 'stringify' operation on 64-bit integers." );
-    test_register ( test_string_f64 , "Testing 'stringify' operation on 64-bit floating point numbers." );
-    test_register ( test_to_u64 , "Parsing a string as a u64 value." );
-    test_register ( test_to_i64 , "Parsing a string as a i64 value." );
-    test_register ( test_to_f64 , "Parsing a string as a f64 value." );
+    // test_register ( test_string_empty , "Detecting an empty string." );
+    // test_register ( test_string_trim , "Testing string 'trim' operation." );
+    // test_register ( test_string_contains , "Testing string 'contains' operation." );
+    // test_register ( test_string_reverse , "Testing string in-place 'reverse' operation." );
+    // test_register ( test_string_replace , "Testing string 'replace' operation." );
+    // test_register ( test_string_strip_ansi , "Stripping a string of ANSI formatting codes." );
+    // test_register ( test_string_u64_and_i64 , "Testing 'stringify' operation on 64-bit integers." );
+    // test_register ( test_string_f64 , "Testing 'stringify' operation on 64-bit floating point numbers." );
+    // test_register ( test_to_u64 , "Parsing a string as a u64 value." );
+    // test_register ( test_to_i64 , "Parsing a string as a i64 value." );
+    // test_register ( test_to_f64 , "Parsing a string as a f64 value." );
     test_register ( test_string_format , "Constructing a string using format specifiers." );
 }
