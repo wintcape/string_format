@@ -476,8 +476,9 @@ __string_format
         if ( format_specifier.tag == STRING_FORMAT_SPECIFIER_INVALID )
         {
             _string_format_consume_arguments ( state
-                                             , format_specifier.arg_count
-                                             );
+                                             , MAX ( format_specifier.arg_count
+                                                   , ( u64 ) 1
+                                                   ));
             read += format_specifier.length;
             continue;
         }
