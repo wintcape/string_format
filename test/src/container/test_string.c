@@ -2986,7 +2986,7 @@ test_string_format
     EXPECT_EQ ( _string_length ( "{ `world`, `!` }" ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "{ `world`, `!` }" , string_length ( string ) ) );
     string_destroy ( string );
-
+ 
     // TEST 108: Array format modifier with custom array start, terminator, and separator strings.
     string = string_format ( "%a[(\n\t|_|\n)]s" , const_string_array_in , 4 , sizeof ( char* ) );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
@@ -3056,10 +3056,10 @@ test_string_format
     string_destroy ( string );
 
     // TEST 116: array start, terminator, or separator strings containing wildcard tokens (i.e. `?`) which are **not an exact match** to the token (i.e. `?`) do not need to be escaped.
-    string = string_format ( "%[2:5]a[|? |\\?]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
+    string = string_format ( "%[2:5]a[|? |\\? ]i" , const_i8_array_in , 16 , sizeof ( i8 ) );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    EXPECT_EQ ( _string_length ( "-6? -5? -4?" ) , string_length ( string ) );
-    EXPECT ( memory_equal ( string , "-6? -5? -4?" , string_length ( string ) ) );
+    EXPECT_EQ ( _string_length ( "-6? -5? -4\\? " ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-6? -5? -4\\? " , string_length ( string ) ) );
     string_destroy ( string );
 
     // TEST 117: Array format modifier is invalidated if a custom array start, terminator, or separator string is present but the number of separator tokens is incorrect.
