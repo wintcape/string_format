@@ -474,9 +474,8 @@ __string_format
         if ( format_specifier.tag == STRING_FORMAT_SPECIFIER_INVALID )
         {
             _string_format_consume_arguments ( state
-                                             , MAX ( format_specifier.arg_count
-                                                   , ( u64 ) 1
-                                                   ));
+                                             , format_specifier.arg_count
+                                             );
             read += format_specifier.length;
             continue;
         }
@@ -543,7 +542,7 @@ _string_format_validate_format_specifier
     // value matching against STRING_FORMAT_SPECIFIER_INVALID.
     format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID + 1;
     format_specifier->length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_ID ) - 1;
-    format_specifier->arg_count = 0;
+    format_specifier->arg_count = 1;
     
     // Out of bounds? Y/N
     if ( read >= STRING_FORMAT_READ_LIMIT ( state ) )
@@ -806,10 +805,7 @@ _string_format_validate_format_specifier_ignore
     // Validation not required.
 
     format_specifier->arg_count = 0;
-    if ( format_specifier->tag != STRING_FORMAT_SPECIFIER_INVALID )
-    {
-        format_specifier->tag = STRING_FORMAT_SPECIFIER_IGNORE;
-    }
+    format_specifier->tag = STRING_FORMAT_SPECIFIER_IGNORE;
 }
 
 void
@@ -2272,8 +2268,8 @@ _string_format_validate_format_modifier_resizable_array
     //       (Validation complete).
     if ( **read != '[' )
     {
-        format_specifier->collection.tag = STRING_FORMAT_COLLECTION_ARRAY;
-        format_specifier->modifiers[ STRING_FORMAT_MODIFIER_ARRAY ] = true;
+        format_specifier->collection.tag = STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY;
+        format_specifier->modifiers[ STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY ] = true;
         return;
     }
 
