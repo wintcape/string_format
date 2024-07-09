@@ -2556,7 +2556,7 @@ test_string_format
 
     // TEST 62: string_format can jump over arguments if an invalid format specifier is provided while still consuming other arguments which correspond to valid format specifiers.
     float_in = 1.5;
-    string = string_format ( "`_%Pr%1478{`%i %c %+.1f %r2i %r4? %s %Pl.2c %S`}_`" , 16 , '~' , &float_in , 3 , '!' , &"##" , ',' , string_in );
+    string = string_format ( "`_%Pr%1478{`%i %c %+.1f %r2i %r4? %s %Pl.2c %S`}_`" , 16 , '~' , &float_in , 3 , &"##" , ',' , string_in );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "`_`16 ~ +1.5 11 %r4? ## ., Hello world!`%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%_`" ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "`_`16 ~ +1.5 11 %r4? ## ., Hello world!`%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%_`" , string_length ( string ) ) );
@@ -3203,6 +3203,14 @@ test_string_format
     EXPECT ( memory_equal ( string , "%[2:5]A[|[|i" , string_length ( string ) ) );
     string_destroy ( string );
 
+    // TEST 132: An invalid format specifier containing retroactive wildcards, or otherwise corresponding to multiple arguments in the variadic argument list, results in the correct number of arguments being skipped.
+    float_in = 27.5;
+    string = string_format ( "%i%c %.2f %[0:]a[?| |?]r1u %i %[1:8]A[?| |\\|\\]].0002F %s %i" , -4 , 'w' , &float_in , const_i8_array_in , 16 , sizeof ( i8 ) , &"| " , &" |" , 24 , f32_array_in , &"[]" , &"Hello world!" , -8 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "-4w 27.50 %[0:]a[?| |?]r1u 24 %[1:8]A[?| |\\|\\]].0002F Hello world! -8" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-4w 27.50 %[0:]a[?| |?]r1u 24 %[1:8]A[?| |\\|\\]].0002F Hello world! -8" , string_length ( string ) ) );
+    string_destroy ( string );
+
     // TODO: Add support for passing a single backslash as a multi-character
     //       padding string. Currently, this does not work because the
     //       terminating delimiter matches against its escape sequence
@@ -3235,16 +3243,16 @@ test_register_string
     // test_register ( test_string_append , "Testing string 'push' operation." );
     // test_register ( test_string_insert_and_remove , "Testing string 'insert' and 'remove' operations." );
     // test_register ( test_string_insert_and_remove_random , "Testing string 'insert' and 'remove' operations with random indices and elements." );
-    // test_register ( test_string_empty , "Detecting an empty string." );
-    // test_register ( test_string_trim , "Testing string 'trim' operation." );
-    // test_register ( test_string_contains , "Testing string 'contains' operation." );
-    // test_register ( test_string_reverse , "Testing string in-place 'reverse' operation." );
-    // test_register ( test_string_replace , "Testing string 'replace' operation." );
-    // test_register ( test_string_strip_ansi , "Stripping a string of ANSI formatting codes." );
-    // test_register ( test_string_u64_and_i64 , "Testing 'stringify' operation on 64-bit integers." );
-    // test_register ( test_string_f64 , "Testing 'stringify' operation on 64-bit floating point numbers." );
-    // test_register ( test_to_u64 , "Parsing a string as a u64 value." );
-    // test_register ( test_to_i64 , "Parsing a string as a i64 value." );
-    // test_register ( test_to_f64 , "Parsing a string as a f64 value." );
+    test_register ( test_string_empty , "Detecting an empty string." );
+    test_register ( test_string_trim , "Testing string 'trim' operation." );
+    test_register ( test_string_contains , "Testing string 'contains' operation." );
+    test_register ( test_string_reverse , "Testing string in-place 'reverse' operation." );
+    test_register ( test_string_replace , "Testing string 'replace' operation." );
+    test_register ( test_string_strip_ansi , "Stripping a string of ANSI formatting codes." );
+    test_register ( test_string_u64_and_i64 , "Testing 'stringify' operation on 64-bit integers." );
+    test_register ( test_string_f64 , "Testing 'stringify' operation on 64-bit floating point numbers." );
+    test_register ( test_to_u64 , "Parsing a string as a u64 value." );
+    test_register ( test_to_i64 , "Parsing a string as a i64 value." );
+    test_register ( test_to_f64 , "Parsing a string as a f64 value." );
     test_register ( test_string_format , "Constructing a string using format specifiers." );
 }
