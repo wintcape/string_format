@@ -204,8 +204,6 @@ typedef struct
 
     string_format_token_t   separator_token;
     bool                    separator_token_set_from_wildcard;
-
-
 }
 string_format_array_t;
 
