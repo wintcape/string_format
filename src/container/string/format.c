@@ -2269,7 +2269,7 @@ _string_format_validate_format_modifier_resizable_array
     if ( **read != '[' )
     {
         format_specifier->collection.tag = STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY;
-        format_specifier->modifiers[ STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY ] = true;
+        format_specifier->modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ] = true;
         return;
     }
 
@@ -2300,7 +2300,7 @@ _string_format_validate_format_modifier_resizable_array
         // Validation complete.
 
         format_specifier->collection.tag = STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY;
-        format_specifier->modifiers[ STRING_FORMAT_COLLECTION_RESIZABLE_ARRAY ] = true;
+        format_specifier->modifiers[ STRING_FORMAT_MODIFIER_RESIZABLE_ARRAY ] = true;
         return;
     }
 
