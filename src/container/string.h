@@ -226,22 +226,6 @@ __string_clear
     __string_clear ( string )
 
 /**
- * @brief Trims whitespace off front and back of a string. O(n). In-place.
- *
- * Does **not** handle strings which contain zero-bytes (i.e. binary strings).
- * 
- * @param string The resizable string to trim. Must be non-zero.
- * @return The resizable string with whitespace trimmed off the front and back.
- */
-string_t*
-__string_trim
-(   string_t* string
-);
-
-#define string_trim(string) \
-    __string_trim ( string )
-
-/**
  * @brief Replaces all instances of a substring within a string with a different
  * substring. O(n).
  * 
@@ -286,7 +270,50 @@ __string_replace
     })
 
 /**
+ * @brief Trims whitespace off front and back of a string. O(n). In-place.
+ *
+ * Does **not** handle strings which contain zero-bytes (i.e. binary strings).
+ * 
+ * For a variant which takes as argument two fixed-length i/o string buffers,
+ * use string_trim (see core/string.h); for a variant which takes as argument
+ * a resizable string, use __string_trim.
+ * 
+ * @param string The string to trim. Must be non-zero.
+ * @return The resizable string with whitespace trimmed off the front and back.
+ */
+string_t*
+__string_trim
+(   string_t* string
+);
+
+/**
+ * @brief Strips a string of a provided escape sequence. O(n). In-place.
+ * 
+ * Do not include the backslash in the escape sequence string; ex. :
+ *      __string_strip_escape ( string , "{" , 1 )
+ * 
+ * For a variant which takes as argument two fixed-length i/o string buffers,
+ * use string_strip_escape (see core/string.h); for a variant which takes as
+ * argument a resizable string, use __string_strip_escape.
+ * 
+ * @param string The resizable string to strip. Must be non-zero.
+ * @param escape Escape sequence. Must be non-zero.
+ * @param escape_length The number of characters in escape.
+ * @return The resizable string stripped of the provided escape sequence.
+ */
+string_t*
+__string_strip_escape
+(   string_t*   string
+,   const char* escape
+,   u64         escape_length
+);
+
+/**
  * @brief Strips a string of ANSI formatting codes. O(n). In-place.
+ * 
+ * For a variant which takes as argument two fixed-length i/o string buffers,
+ * use string_strip_ansi (see core/string.h); for a variant which takes as
+ * argument a resizable string, use __string_strip_ansi.
  * 
  * @param string The resizable string to strip. Must be non-zero.
  * @return The resizable string stripped of ANSI formatting codes.
@@ -295,8 +322,5 @@ string_t*
 __string_strip_ansi
 (   string_t* string
 );
-
-#define string_strip_ansi(string) \
-    __string_strip_ansi ( string )
 
 #endif  // STRING_H

@@ -307,6 +307,96 @@ to_f64
     to_f64 ( (string) , _string_length ( string ) , (value) )
 
 /**
+ * @brief Trims whitespace off front and back of a string. O(n). In-place.
+ * 
+ * Output buffer should have access to at least as many characters as the source
+ * buffer to guarantee no overflow.
+ * 
+ * For a variant which takes as argument two explicit-length i/o string buffers,
+ * use string_trim; to compute the length of a null-terminated string prior to
+ * passing it to string_trim, use _string_trim; for a variant which takes as
+ * argument a resizable string, use __string_trim (see container/string.h).
+ * 
+ * @param src The string to trim. Must be non-zero.
+ * @param string_length The number of characters in src.
+ * @param dst Output buffer. Must be non-zero.
+ * @return dst.
+ */
+char*
+string_trim
+(   const char* src
+,   const u64   src_length
+,   char*       dst
+);
+
+#define _string_trim(src,dst) \
+    string_trim ( (src) , _string_length ( src ) , (dst) )
+
+/**
+ * @brief Strips a string of a provided escape sequence. O(n). In-place.
+ * 
+ * Do not include the backslash in the escape sequence string; ex. :
+ *      _string_strip_escape ( string , "{" ) -> ( strips "\\{" )
+ * 
+ * Output buffer should have access to at least as many characters as the source
+ * buffer to guarantee no overflow.
+ * 
+ * For a variant which takes as arguments explicit-length i/o string buffers,
+ * use string_strip_escape; to compute the lengths of null-terminated strings
+ * prior to passing them to string_strip_escape, use _string_strip_escape; for a
+ * variant which takes as argument a resizable string, use __string_strip_escape
+ * (see container/string.h).
+ * 
+ * @param src The string to trim. Must be non-zero.
+ * @param string_length The number of characters in src.
+ * @param escape Escape sequence. Must be non-zero.
+ * @param escape_length The number of characters in escape.
+ * @param dst Output buffer. Must be non-zero.
+ * @return dst.
+ */
+char*
+string_strip_escape
+(   const char* src
+,   const u64   src_length
+,   const char* escape
+,   u64         escape_length
+,   char*       dst
+);
+
+#define _string_strip_escape(src,escape,dst)                   \
+    string_strip_escape ( (src) , _string_length ( src )       \
+                        , (escape) , _string_length ( escape ) \
+                        , (dst)                                \
+                        )
+
+/**
+ * @brief Strips a string of ANSI formatting codes. O(n). In-place.
+ * 
+ * Output buffer should have access to at least as many characters as the source
+ * buffer to guarantee no overflow.
+ * 
+ * For a variant which takes as arguments explicit-length i/o string buffers,
+ * use string_strip_ansi; to compute the lengths of null-terminated strings
+ * prior to passing them to string_strip_ansi, use _string_strip_ansi; for a
+ * variant which takes as argument a resizable string, use __string_strip_ansi
+ * (see container/string.h).
+ * 
+ * @param src The string to trim. Must be non-zero.
+ * @param string_length The number of characters in src.
+ * @param dst Output buffer. Must be non-zero.
+ * @return dst.
+ */
+char*
+string_strip_ansi
+(   const char* src
+,   const u64   src_length
+,   char*       dst
+);
+
+#define _string_strip_ansi(src,dst) \
+    string_strip_ansi ( (src) , _string_length ( src ) , (dst) )
+
+/**
  * @brief Allocates memory for a string of the provided size.
  * 
  * Uses dynamic memory allocation. Call string_free to free.

@@ -2893,8 +2893,8 @@ _string_format_parse_next_argument
         state_.args_remaining = state->args_remaining;
         state_.string = _string_create ( state_.format_length + 1 );
         string = __string_format ( &state_ );
-        _string_replace ( string , "\\{" , "{" ); // TODO: Okay, this is just plain lazy.
-        _string_replace ( string , "\\}" , "}" ); // TODO: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        __string_strip_escape ( string , "{" , sizeof ( "{" ) - 1 );
+        __string_strip_escape ( string , "}" , sizeof ( "}" ) - 1 );
         _string_format_append ( &state->string
                               , string
                               , string_length ( string )

@@ -667,6 +667,135 @@ to_f64
 }
 
 char*
+string_trim
+(   const char* src
+,   const u64   src_length
+,   char*       dst
+)
+{
+    u64 i;
+    
+    // Compute index of first non-whitespace character.
+    for ( i = 0; i < src_length && whitespace ( src[ i ] ); ++i );
+    const char* const from = src + i;
+
+    // Whitespace-only case.
+    if ( i == src_length )
+    {
+        dst[ 0 ] = 0; // Append terminator.
+        return dst;
+    }
+
+    // Compute index of final non-whitespace character.
+    for ( i = src_length; i && whitespace ( src[ i - 1 ] ); --i );
+    const char* const to = src + i;
+
+    // Copy memory range in-place.
+    const u64 size = MAX ( 0 , to - from );
+    memory_copy ( dst , from , size );
+    dst[ size ] = 0; // Append terminator.
+    
+    return dst;
+}
+
+char*
+string_strip_escape
+(   const char* src
+,   const u64   src_length
+,   const char* escape
+,   u64         escape_length
+,   char*       dst
+)
+{
+    if ( escape_length > src_length )
+    {
+        memory_copy ( dst , src , src_length );
+        dst[ src_length ] = 0;
+        return dst;
+    }
+
+    u64 i;
+    u64 j;
+    u64 dst_length = 0;
+    const u64 limit = src_length - escape_length;
+    for ( i = 0 , j = 0; i < limit; ++i )
+    {
+        if ( src[ i ] != '\\' )
+        {
+            continue;
+        }
+        if ( !memory_equal ( src + i + 1 , escape , escape_length ) )
+        {
+            continue;
+        }
+        memory_copy ( dst + dst_length , src + j , i - j );
+        dst_length += i - j;
+        j = i + 1;
+    }
+    
+    memory_copy ( dst + dst_length , src + j , src_length - j );
+    dst_length += src_length - j;
+    dst[ dst_length ] = 0; // Append terminator.
+    return dst;
+}
+
+char*
+string_strip_ansi
+(   const char* src
+,   const u64   src_length
+,   char*       dst
+)
+{
+    u64 dst_index = 0;
+    u64 i = 0;
+    u64 j = 0;
+    for (;;)
+    {
+        if ( !src_length || i >= src_length - 1 )
+        {
+            break;
+        }
+        
+        if ( src[ i ] != '\033' || src[ i + 1 ]  != '[' )
+        {
+            i += 1;
+            continue;
+        }
+
+        u64 k = i + 2;
+        for (;;)
+        {
+            if ( k >= src_length )
+            {
+                break;
+            }
+
+            if ( src[ k ] == 'm' )
+            {
+                memory_copy ( dst + dst_index , src + j , i - j );
+                dst_index += i - j;
+                j = k + 1;
+                i = j;
+                break;
+            }
+
+            if ( !digit ( src[ k ] ) && src[ k ] != ';' )
+            {
+                i += 1;
+                break;
+            }
+
+            k += 1;
+        }
+    }
+
+    const u64 count = src_length - j;
+    memory_copy ( dst + dst_index , src + j , count );
+    dst[ dst_index + count ] = 0; // Append terminator.
+    return dst;
+}
+
+char*
 string_allocate
 (   u64 content_size
 )

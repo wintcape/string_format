@@ -640,37 +640,75 @@ test_string_trim
     ////////////////////////////////////////////////////////////////////////////
     // Start test.
 
-    // TEST 1: string_trim does not fail on empty string.
+    // TEST 1: __string_trim (resizable string).
+
+    // TEST 1.1: __string_trim does not fail on empty string.
     _string_append ( string , "" );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_trim ( string );
+    __string_trim ( string );
     EXPECT ( memory_equal ( string , "" , _string_length ( "" ) ) );
     string_clear ( string );
 
-    // TEST 2: string_trim reduces a string of only whitespace to empty.
+    // TEST 1.2: __string_trim reduces a string of only whitespace to empty.
     _string_append ( string , "       \t\n\r        " );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_trim ( string );
+    __string_trim ( string );
     EXPECT ( memory_equal ( string , "" , _string_length ( "" ) ) );
     string_clear ( string );
 
-    // TEST 3: string_trim trims a string with leading whitespace.
+    // TEST 1.3: __string_trim trims a string with leading whitespace.
     _string_append ( string , "\n\t\t\t  <-- Trim this off -->" );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_trim ( string );
+    __string_trim ( string );
     EXPECT ( memory_equal ( string , "<-- Trim this off -->" , _string_length ( "<-- Trim this off -->" ) ) );
     string_clear ( string );
 
-    // TEST 4: string_trim trims a string with trailing whitespace.
+    // TEST 1.4: __string_trim trims a string with trailing whitespace.
     _string_append ( string , "<-- Trim this off -->  \t\t\t\n" );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_trim ( string );
+    __string_trim ( string );
     EXPECT ( memory_equal ( string , "<-- Trim this off -->" , _string_length ( "<-- Trim this off -->" ) ) );
     string_clear ( string );
 
-    // TEST 5: string_trim trims a string with both leading and trailing whitespace.
+    // TEST 1.5: __string_trim trims a string with both leading and trailing whitespace.
     _string_append ( string , "\n\t\t\t  <-- Trim this off -->  \t\t\t\n" );
-    string_trim ( string );
+    __string_trim ( string );
+    EXPECT ( memory_equal ( string , "<-- Trim this off -->" , _string_length ( "<-- Trim this off -->" ) ) );
+    string_clear ( string );
+
+    // TEST 2: string_trim (fixed-length string).
+
+    // TEST 2.1: string_trim does not fail on empty string.
+    _string_append ( string , "" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_trim ( string , string );
+    EXPECT ( memory_equal ( string , "" , _string_length ( "" ) ) );
+    string_clear ( string );
+
+    // TEST 2.2: string_trim reduces a string of only whitespace to empty.
+    _string_append ( string , "       \t\n\r        " );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_trim ( string , string );
+    EXPECT ( memory_equal ( string , "" , _string_length ( "" ) ) );
+    string_clear ( string );
+
+    // TEST 2.3: string_trim trims a string with leading whitespace.
+    _string_append ( string , "\n\t\t\t  <-- Trim this off -->" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_trim ( string , string );
+    EXPECT ( memory_equal ( string , "<-- Trim this off -->" , _string_length ( "<-- Trim this off -->" ) ) );
+    string_clear ( string );
+
+    // TEST 2.4: string_trim trims a string with trailing whitespace.
+    _string_append ( string , "<-- Trim this off -->  \t\t\t\n" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_trim ( string , string );
+    EXPECT ( memory_equal ( string , "<-- Trim this off -->" , _string_length ( "<-- Trim this off -->" ) ) );
+    string_clear ( string );
+
+    // TEST 2.5: string_trim trims a string with both leading and trailing whitespace.
+    _string_append ( string , "\n\t\t\t  <-- Trim this off -->  \t\t\t\n" );
+    _string_trim ( string , string );
     EXPECT ( memory_equal ( string , "<-- Trim this off -->" , _string_length ( "<-- Trim this off -->" ) ) );
     string_clear ( string );
 
@@ -1014,6 +1052,128 @@ test_string_replace
 }
 
 u8
+test_string_strip_escape
+( void )
+{
+    // u64 global_amount_allocated;
+    // u64 array_amount_allocated;
+    // u64 global_allocation_count;
+
+    // // Copy the current global allocator state prior to the test.
+    // global_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ALL );
+    // array_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ARRAY );
+    // global_allocation_count = MEMORY_ALLOCATION_COUNT;
+
+    char* string = string_create ();
+
+    // Verify there was no memory error prior to the test.
+    EXPECT_NEQ ( 0 , string );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Start test.
+
+    // TEST 1: __string_strip_escape (resizable string).
+
+    // TEST 1.1: __string_strip_escape does not fail on an empty string.
+    _string_append ( string , "" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    __string_strip_escape ( string , "|" , _string_length ( "|" ) );
+    EXPECT_EQ ( 0 , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 1.2: __string_strip_escape removes a single character escape sequence from the string.
+    _string_append ( string , "\\|S\\|trip\\|\\| me.\\|\\|\\|\\|\\|\\||\\ |\\ " );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    __string_strip_escape ( string , "|" , _string_length ( "|" ) );
+    EXPECT_EQ ( _string_length ( "|S|trip|| me.|||||||\\ |\\ " ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "|S|trip|| me.|||||||\\ |\\ " , string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 1.3: __string_strip_escape removes all backslashes from the string if the escape sequence is empty.
+    _string_append ( string , "\\|S\\tri\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\p me.\\|\\\\\\\\\\" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    __string_strip_escape ( string , "" , _string_length ( "" ) );
+    EXPECT_EQ ( _string_length ( "|Strip me.|" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "|Strip me.|" , string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 1.4: __string_strip_escape removes a multi-character escape sequence from the string.
+    _string_append ( string , "a\\|    Strip me.\\|    \\|    dfa" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    __string_strip_escape ( string , "|    " , _string_length ( "|    " ) );
+    EXPECT_EQ ( _string_length ( "a|    Strip me.|    |    dfa" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "a|    Strip me.|    |    dfa" , string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 1.5: __string_strip_escape does not modify the string if the escape sequence cannot be found.
+    _string_append ( string , "f\\\\sdfds\\|    Strip me.\\|    d\\fa" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    __string_strip_escape ( string , "|   ." , _string_length ( "|     " ) );
+    EXPECT_EQ ( _string_length ( "f\\\\sdfds\\|    Strip me.\\|    d\\fa" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "f\\\\sdfds\\|    Strip me.\\|    d\\fa" , string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2: string_strip_escape (fixed-length string).
+
+    // TEST 2.1: string_strip_escape does not fail on an empty string.
+    _string_append ( string , "" );
+    _string_strip_escape ( string , "|" , string );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( 0 , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2.2: string_strip_escape removes a single character escape sequence from the string.
+    _string_append ( string , "\\|S\\|trip\\|\\| me.\\|\\|\\|\\|\\|\\||\\ |\\ " );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_escape ( string , "|" , string );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "|S|trip|| me.|||||||\\ |\\ " ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "|S|trip|| me.|||||||\\ |\\ " , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2.3: string_strip_escape removes all backslashes from the string if the escape sequence is empty.
+    _string_append ( string , "\\|S\\tri\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\p me.\\|\\\\\\\\\\" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_escape ( string , "" , string );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "|Strip me.|" ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "|Strip me.|" , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2.4: string_strip_escape removes a multi-character escape sequence from the string.
+    _string_append ( string , "a\\|    Strip me.\\|    \\|    dfa" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_escape ( string , "|    " , string );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "a|    Strip me.|    |    dfa" ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "a|    Strip me.|    |    dfa" , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2.5: string_strip_escape does not modify the string if the escape sequence cannot be found.
+    _string_append ( string , "f\\\\sdfds\\|    Strip me.\\|    d\\fa" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_escape ( string , "|   ." , string );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "f\\\\sdfds\\|    Strip me.\\|    d\\fa" ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "f\\\\sdfds\\|    Strip me.\\|    d\\fa" , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // End test.
+    ////////////////////////////////////////////////////////////////////////////
+
+    string_destroy ( string );
+
+    // // Verify the test allocated and freed all of its memory properly.
+    // EXPECT_EQ ( global_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ALL ) );
+    // EXPECT_EQ ( array_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ARRAY ) );
+    // EXPECT_EQ ( global_allocation_count , MEMORY_ALLOCATION_COUNT );
+
+    return true;
+}
+
+u8
 test_string_strip_ansi
 ( void )
 {
@@ -1034,62 +1194,135 @@ test_string_strip_ansi
     ////////////////////////////////////////////////////////////////////////////
     // Start test.
 
-    // TEST 1: string_strip_ansi does not fail on an empty string.
+    // TEST 1: __string_strip_ansi (resizable string).
+
+    // TEST 1.1: __string_strip_ansi does not fail on an empty string.
     _string_append ( string , "" );
-    string_strip_ansi ( string );
+    __string_strip_ansi ( string );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( 0 , string_length ( string ) );
     EXPECT ( memory_equal ( string , "" , string_length ( string ) + 1 ) );
     string_clear ( string );
 
-    // TEST 2: string_strip_ansi removes a (short) single valid ANSI formatting code from the front and back of a string.
+    // TEST 1.2: __string_strip_ansi removes a (short) single valid ANSI formatting code from the front and back of a string.
     _string_append ( string , ANSI_CC ( ANSI_CC_BG_DARK_RED ) "Strip me." ANSI_CC_RESET );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_strip_ansi ( string );
+    __string_strip_ansi ( string );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "Strip me." ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "Strip me." , string_length ( string ) + 1 ) );
     string_clear ( string );
 
-    // TEST 3: string_strip_ansi removes a (short) single valid ANSI formatting code from the front and back of a string.
+    // TEST 1.3: __string_strip_ansi removes a (long) single valid ANSI formatting code from the front and back of a string.
     _string_append ( string , "Strip \033[0;1;2;43;44;45;46m" ANSI_CC ( ANSI_CC_BG_DARK_RED ) "me." ANSI_CC_RESET );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_strip_ansi ( string );
+    __string_strip_ansi ( string );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "Strip me." ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "Strip me." , string_length ( string ) + 1 ) );
     string_clear ( string );
 
-    // TEST 4: string_strip_ansi truncates a string entirely if it is made up solely of ANSI formatting codes.
+    // TEST 1.4: __string_strip_ansi does not modify the string if no formatting codes are encountered.
+    _string_append ( string , "Strip me." );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    __string_strip_ansi ( string );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Strip me." ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Strip me." , string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 1.5: __string_strip_ansi truncates a string entirely if it is made up solely of ANSI formatting codes.
     _string_append ( string , ANSI_CC_RESET "\033[0;1;2;43;44;45;46;101m" ANSI_CC2 ( ANSI_CC_BG_CYAN , ANSI_CC_BOLD ) );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_strip_ansi ( string );
+    __string_strip_ansi ( string );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( 0 , string_length ( string ) );
     EXPECT ( memory_equal ( string , "" , 1 ) );
     string_clear ( string );
 
-    // TEST 5: string_strip_ansi ignores substrings which **almost** look like ANSI formatting codes.
+    // TEST 1.6: __string_strip_ansi ignores substrings which **almost** look like ANSI formatting codes.
     _string_append ( string , "This should not\033[;;;;;]m be stripped." );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_strip_ansi ( string );
+    __string_strip_ansi ( string );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "This should not\033[;;;;;]m be stripped." ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "This should not\033[;;;;;]m be stripped." , string_length ( string ) + 1 ) );
     string_clear ( string );
     _string_append ( string , "This should not\033[890345298430958349058;324234234243324234234;23423423423423;234234234234234;234234234234234322342342342342342343\033m be stripped." );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_strip_ansi ( string );
+    __string_strip_ansi ( string );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "This should not\033[890345298430958349058;324234234243324234234;23423423423423;234234234234234;234234234234234322342342342342342343\033m be stripped." ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "This should not\033[890345298430958349058;324234234243324234234;23423423423423;234234234234234;234234234234234322342342342342342343\033m be stripped." , string_length ( string ) + 1 ) );
     string_clear ( string );
     _string_append ( string , "This should not\033[47;106 be stripped." );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    string_strip_ansi ( string );
+    __string_strip_ansi ( string );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "This should not\033[47;106 be stripped." ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "This should not\033[47;106 be stripped." , string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2: string_strip_ansi (fixed-length string).
+
+    // TEST 2.1: string_strip_ansi does not fail on an empty string.
+    _string_append ( string , "" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_ansi ( string , string );
+    EXPECT_EQ ( 0 , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2.2: string_strip_ansi removes a (short) single valid ANSI formatting code from the front and back of a string.
+    _string_append ( string , ANSI_CC ( ANSI_CC_BG_DARK_RED ) "Strip me." ANSI_CC_RESET );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_ansi ( string , string );
+    EXPECT_EQ ( _string_length ( "Strip me." ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Strip me." , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2.3: string_strip_ansi removes a (short) single valid ANSI formatting code from the front and back of a string.
+    _string_append ( string , "Strip \033[0;1;2;43;44;45;46m" ANSI_CC ( ANSI_CC_BG_DARK_RED ) "me." ANSI_CC_RESET );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_ansi ( string , string );
+    EXPECT_EQ ( _string_length ( "Strip me." ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Strip me." , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2.4: __string_strip_ansi does not modify the string if no formatting codes are encountered.
+    _string_append ( string , "Strip me." );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_ansi ( string , string );
+    EXPECT_EQ ( _string_length ( "Strip me." ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Strip me." , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+
+    // TEST 2.5: string_strip_ansi truncates a string entirely if it is made up solely of ANSI formatting codes.
+    _string_append ( string , ANSI_CC_RESET "\033[0;1;2;43;44;45;46;101m" ANSI_CC2 ( ANSI_CC_BG_CYAN , ANSI_CC_BOLD ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_ansi ( string , string );
+    EXPECT_EQ ( 0 , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , 1 ) );
+    string_clear ( string );
+
+    // TEST 2.6: string_strip_ansi ignores substrings which **almost** look like ANSI formatting codes.
+    _string_append ( string , "This should not\033[;;;;;]m be stripped." );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_ansi ( string , string );
+    EXPECT_EQ ( _string_length ( "This should not\033[;;;;;]m be stripped." ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "This should not\033[;;;;;]m be stripped." , _string_length ( string ) + 1 ) );
+    string_clear ( string );
+    _string_append ( string , "This should not\033[890345298430958349058;324234234243324234234;23423423423423;234234234234234;234234234234234322342342342342342343\033m be stripped." );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_ansi ( string , string );
+    EXPECT_EQ ( _string_length ( "This should not\033[890345298430958349058;324234234243324234234;23423423423423;234234234234234;234234234234234322342342342342342343\033m be stripped." ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "This should not\033[890345298430958349058;324234234243324234234;23423423423423;234234234234234;234234234234234322342342342342342343\033m be stripped." , string_length ( string ) + 1 ) );
+    string_clear ( string );
+    _string_append ( string , "This should not\033[47;106 be stripped." );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    _string_strip_ansi ( string , string );
+    EXPECT_EQ ( _string_length ( "This should not\033[47;106 be stripped." ) , _string_length ( string ) );
+    EXPECT ( memory_equal ( string , "This should not\033[47;106 be stripped." , _string_length ( string ) + 1 ) );
     string_clear ( string );
 
     // End test.
@@ -3249,6 +3482,7 @@ test_register_string
     test_register ( test_string_reverse , "Testing string in-place 'reverse' operation." );
     test_register ( test_string_replace , "Testing string 'replace' operation." );
     test_register ( test_string_strip_ansi , "Stripping a string of ANSI formatting codes." );
+    test_register ( test_string_strip_escape , "Stripping a string of escape sequences." );
     test_register ( test_string_u64_and_i64 , "Testing 'stringify' operation on 64-bit integers." );
     test_register ( test_string_f64 , "Testing 'stringify' operation on 64-bit floating point numbers." );
     test_register ( test_to_u64 , "Parsing a string as a u64 value." );

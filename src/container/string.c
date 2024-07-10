@@ -177,38 +177,6 @@ __string_clear
 }
 
 string_t*
-__string_trim
-(   string_t* string
-)
-{
-    const u64 length = string_length ( string );
-    u64 i;
-    
-    // Compute index of first non-whitespace character.
-    for ( i = 0; i < length && whitespace ( string[ i ] ); ++i );
-    char* const from = string + i;
-
-    // Whitespace-only case.
-    if ( i == length )
-    {
-        return string_clear ( string );
-    }
-
-    // Compute index of final non-whitespace character.
-    for ( i = length; i && whitespace ( string[ i - 1 ] ); --i );
-    char* const to = string + i;
-
-    // Copy memory range in-place.
-    const u64 size = MAX ( 0 , to - from );
-    memory_move ( string , from , size );
-    string[ size ] = 0; // Append terminator.
-
-    _array_field_set ( string , ARRAY_FIELD_LENGTH , size + 1 );
-    
-    return string;
-}
-
-string_t*
 __string_replace
 (   string_t*   string
 ,   const char* remove
@@ -285,6 +253,77 @@ __string_replace
 }
 
 string_t*
+__string_trim
+(   string_t* string
+)
+{
+    const u64 length = string_length ( string );
+    u64 i;
+    
+    // Compute index of first non-whitespace character.
+    for ( i = 0; i < length && whitespace ( string[ i ] ); ++i );
+    char* const from = string + i;
+
+    // Whitespace-only case.
+    if ( i == length )
+    {
+        return string_clear ( string );
+    }
+
+    // Compute index of final non-whitespace character.
+    for ( i = length; i && whitespace ( string[ i - 1 ] ); --i );
+    char* const to = string + i;
+
+    // Copy memory range in-place.
+    const u64 size = MAX ( 0 , to - from );
+    memory_move ( string , from , size );
+    string[ size ] = 0; // Append terminator.
+
+    _array_field_set ( string , ARRAY_FIELD_LENGTH , size + 1 );
+    
+    return string;
+}
+
+string_t*
+__string_strip_escape
+(   string_t*   string
+,   const char* escape
+,   u64         escape_length
+)
+{
+    const u64 old_length = string_length ( string );
+    if ( escape_length > old_length )
+    {
+        return string;
+    }
+
+    u64 i;
+    u64 j;
+    u64 new_length = 0;
+    const u64 limit = old_length - escape_length;
+    for ( i = 0 , j = 0; i < limit; ++i )
+    {
+        if ( string[ i ] != '\\' )
+        {
+            continue;
+        }
+        if ( !memory_equal ( string + i + 1 , escape , escape_length ) )
+        {
+            continue;
+        }
+        memory_copy ( string + new_length , string + j , i - j );
+        new_length += i - j;
+        j = i + 1;
+    }
+
+    memory_copy ( string + new_length , string + j , old_length - j );
+    new_length += old_length - j;
+    _array_field_set ( string , ARRAY_FIELD_LENGTH , new_length + 1 );
+    string[ new_length ] = 0; // Append terminator.
+    return string;
+}
+
+string_t*
 __string_strip_ansi
 (   string_t* string
 )
@@ -293,7 +332,7 @@ __string_strip_ansi
     for (;;)
     {
         const u64 length = string_length ( string );
-        if ( !length || i >=  length - 1 )
+        if ( !length || i >= length - 1 )
         {
             break;
         }

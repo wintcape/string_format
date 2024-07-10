@@ -184,7 +184,7 @@ logger_log
     if ( state && state->initialized && state->file.valid )
     {
         plaintext = string_copy ( raw );
-        string_strip_ansi ( plaintext );
+        __string_strip_ansi ( plaintext );
         _string_prepend ( plaintext , log_level_prefixes[ level ] );
         logger_file_append ( plaintext , string_length ( plaintext ) );
     }
