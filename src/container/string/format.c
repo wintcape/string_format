@@ -3503,9 +3503,9 @@ _string_format_parse_argument_array
                        ;
 
     // Set array start, terminator, and separator tokens.
-    string_t* array_start;
-    string_t* array_terminator;
-    string_t* array_separator;
+    string_format_token_t array_start;
+    string_format_token_t array_terminator;
+    string_format_token_t array_separator;
     if ( format_specifier->collection.array.default_tokens )
     {
         if (   format_specifier->tag == STRING_FORMAT_SPECIFIER_CHARACTER
@@ -3513,59 +3513,54 @@ _string_format_parse_argument_array
             || format_specifier->tag == STRING_FORMAT_SPECIFIER_RESIZABLE_STRING
            )
         {
-            array_start = string_create_from ( "{ `" );
-            array_terminator = string_create_from ( "` }" );
-            array_separator = string_create_from ( "`, `" );
+            array_start.value = "{ `";
+            array_terminator.value = "` }";
+            array_separator.value = "`, `";
+            array_start.length = sizeof ( "{ `" ) - 1;
+            array_terminator.length = sizeof ( "` }" ) - 1;
+            array_separator.length = sizeof ( "`, `" ) - 1;
         }
         else
         {
-            array_start = string_create_from ( "{ " );
-            array_terminator = string_create_from ( " }" );
-            array_separator = string_create_from ( ", " );
+            array_start.value = "{ ";
+            array_terminator.value = " }";
+            array_separator.value = ", ";
+            array_start.length = sizeof ( "{ " ) - 1;
+            array_terminator.length = sizeof ( " }" ) - 1;
+            array_separator.length = sizeof ( ", " ) - 1;
         }
     }
     else
     {
-        array_start = _string_copy ( format_specifier->collection.array.start_token.value
-                                   , format_specifier->collection.array.start_token.length
-                                   );
-        array_terminator = _string_copy ( format_specifier->collection.array.terminator_token.value
-                                        , format_specifier->collection.array.terminator_token.length
-                                        );
-        array_separator = _string_copy ( format_specifier->collection.array.separator_token.value
-                                       , format_specifier->collection.array.separator_token.length
-                                       );
-    }
-
-    // Handle escaped `|`, `[` and `]` within custom array start, terminator,
-    // and separator tokens.
-    if ( !format_specifier->collection.array.start_token_set_from_wildcard )
-    {
-        // TODO: Okay, this is just plain lazy.
-        _string_replace ( array_start , "\\|" , "|" );
-        _string_replace ( array_start , "\\[" , "[" );
-        _string_replace ( array_start , "\\]" , "]" );
-    }
-    if ( !format_specifier->collection.array.terminator_token_set_from_wildcard )
-    {
-        // TODO: Okay, this is just plain lazy.
-        _string_replace ( array_terminator , "\\|" , "|" );
-        _string_replace ( array_terminator , "\\[" , "[" );
-        _string_replace ( array_terminator , "\\]" , "]" );
-    }
-    if ( !format_specifier->collection.array.separator_token_set_from_wildcard )
-    {
-        // TODO: Okay, this is just plain lazy.
-        _string_replace ( array_separator , "\\|" , "|" );
-        _string_replace ( array_separator , "\\[" , "[" );
-        _string_replace ( array_separator , "\\]" , "]" );
+        array_start = format_specifier->collection.array.start_token;
+        array_terminator = format_specifier->collection.array.terminator_token;
+        array_separator = format_specifier->collection.array.separator_token;
     }
 
     // Print array start token.
     string_append ( state->string
-                  , array_start
-                  , string_length ( array_start )
+                  , array_start.value
+                  , array_start.length
                   );
+
+    // Handle escaped `|`, `[` and `]` within the array start token, if needed.
+    if ( !format_specifier->collection.array.start_token_set_from_wildcard )
+    {
+        char* start_token = state->string
+                          + string_length ( state->string )
+                          - array_start.length
+                          ;
+        _string_strip_escape ( start_token , "|" , start_token );
+        _string_strip_escape ( start_token , "[" , start_token );
+        _string_strip_escape ( start_token , "]" , start_token );
+        _array_field_set ( state->string
+                         , ARRAY_FIELD_LENGTH
+                         , string_length ( state->string )
+                         - array_start.length
+                         + _string_length ( start_token )
+                         + 1
+                         );
+    }
 
     // Traverse the array.
     for ( u64 i = array_from; i < array_to; ++i )
@@ -3715,25 +3710,61 @@ _string_format_parse_argument_array
             break;
         }
 
-        // Print array element separator token.
         if ( i < array_to - 1 )
         {
+            // Print array separator token.
             string_append ( state->string
-                          , array_separator
-                          , string_length ( array_separator )
-                          );
+                          , array_separator.value
+                          , array_separator.length
+                         );
+
+            // Handle escaped `|`, `[` and `]` within the array separator token,
+            // if needed.
+            if ( !format_specifier->collection.array.separator_token_set_from_wildcard )
+            {
+                char* separator_token = state->string
+                                      + string_length ( state->string )
+                                      - array_separator.length
+                                      ;
+                _string_strip_escape ( separator_token , "|" , separator_token );
+                _string_strip_escape ( separator_token , "[" , separator_token );
+                _string_strip_escape ( separator_token , "]" , separator_token );
+                _array_field_set ( state->string
+                                 , ARRAY_FIELD_LENGTH
+                                 , string_length ( state->string )
+                                 - array_separator.length
+                                 + _string_length ( separator_token )
+                                 + 1
+                                 );
+            }
         }
     }
 
     // Print array terminator token.
     string_append ( state->string
-                  , array_terminator
-                  , string_length ( array_terminator )
+                  , array_terminator.value
+                  , array_terminator.length
                   );
 
-    string_destroy ( array_start );
-    string_destroy ( array_terminator );
-    string_destroy ( array_separator );
+    // Handle escaped `|`, `[` and `]` within the array terminator token, if
+    // needed.
+    if ( !format_specifier->collection.array.terminator_token_set_from_wildcard )
+    {
+        char* terminator_token = state->string
+                               + string_length ( state->string )
+                               - array_terminator.length
+                               ;
+        _string_strip_escape ( terminator_token , "|" , terminator_token );
+        _string_strip_escape ( terminator_token , "[" , terminator_token );
+        _string_strip_escape ( terminator_token , "]" , terminator_token );
+        _array_field_set ( state->string
+                         , ARRAY_FIELD_LENGTH
+                         , string_length ( state->string )
+                         - array_terminator.length
+                         + _string_length ( terminator_token )
+                         + 1
+                         );
+    }
 
     return string_length ( state->string ) - old_length;
 }
