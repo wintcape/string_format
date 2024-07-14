@@ -3444,6 +3444,20 @@ test_string_format
     EXPECT ( memory_equal ( string , "-4w 27.50 %[0:]a[?| |?]r1u 24 %[1:8]A[?| |\\|\\]].0002F Hello world! -8" , string_length ( string ) ) );
     string_destroy ( string );
 
+    // TEST 133: Boolean format specifier.
+    string = string_format ( "%B %B %B" , false , true , -1 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "False True True" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "False True True" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 134: Truncated boolean format specifier.
+    string = string_format ( "%b %b %b" , false , true , -1 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "F T T" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "F T T" , string_length ( string ) ) );
+    string_destroy ( string );
+
     // TODO: Add support for passing a single backslash as a multi-character
     //       padding string. Currently, this does not work because the
     //       terminating delimiter matches against its escape sequence

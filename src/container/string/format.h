@@ -25,6 +25,8 @@ typedef enum
 ,   STRING_FORMAT_SPECIFIER_STRING
 ,   STRING_FORMAT_SPECIFIER_RESIZABLE_STRING
 ,   STRING_FORMAT_SPECIFIER_FILE_INFO
+,   STRING_FORMAT_SPECIFIER_BOOLEAN
+,   STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED
 
 ,   STRING_FORMAT_SPECIFIER_COUNT
 }
@@ -74,6 +76,8 @@ STRING_FORMAT_MODIFIER;
 #define STRING_FORMAT_SPECIFIER_TOKEN_STRING                         "s"    /** @brief Format specifier: string. */
 #define STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING               "S"    /** @brief Format specifier: resizable string. */
 #define STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO                      "file" /** @brief Format specifier: file info. */
+#define STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN                        "B"    /** @brief Format specifier: boolean. */
+#define STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN_TRUNCATED              "b"    /** @brief Format specifier: boolean (truncated). */
 
 #define STRING_FORMAT_MODIFIER_TOKEN_WILDCARD                        "?"    /** @brief Format modifier wildcard. */
 
@@ -124,6 +128,8 @@ STRING_FORMAT_MODIFIER;
  *      This includes any string created with the __string_create class of
  *      functions. Length is fetched at runtime via O(1) string_length.
  * %file : File info. The corresponding argument must be a file handle.
+ * %B : Boolean value. Prints either "True" or "False" respectively.
+ * %b : Boolean value (truncated). Prints either "T" or "F" respectively.
  *      
  * ============================= FORMAT MODIFIERS ==============================
  * 
