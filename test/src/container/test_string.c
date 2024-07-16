@@ -3472,6 +3472,7 @@ test_string_format
     string_destroy ( really_long_string_in );
     array_destroy ( f32_array_in );
     array_destroy ( i8_array_in );
+    array_destroy ( string_array_in );
 
     // // Verify the test allocated and freed all of its memory properly.
     // EXPECT_EQ ( global_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ALL ) );
