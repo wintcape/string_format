@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file math/math.c
  * @brief Implementation of the math header.
  * (see math/math.h for additional details)

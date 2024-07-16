@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file math/math.h
  * @brief Datatypes and operations for performing geometric operations.
  */

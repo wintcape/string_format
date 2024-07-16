@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file math/trig.h
  * @brief Defines trigonometric functions.
  */

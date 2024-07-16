@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file math/conversion.h
  * @brief Measurement conversion rates.
  */

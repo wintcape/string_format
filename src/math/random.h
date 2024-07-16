@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file math/random.h
  * @brief Random number generator functions.
  */

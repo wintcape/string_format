@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file math/conversion64.h
  * @brief 64-bit measurement conversion rates.
  */

@@ -1,5 +1,4 @@
 /**
- * @author Matthew Weissel
  * @file math/div.h
  * @brief Integer division predicates.
  */
