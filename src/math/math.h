@@ -1,5 +1,5 @@
 /**
- * @author Matthew Weissel (mweissel3@gatech.edu)
+ * @author Matthew Weissel
  * @file math/math.h
  * @brief Datatypes and operations for performing geometric operations.
  */

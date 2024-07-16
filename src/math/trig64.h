@@ -1,5 +1,5 @@
 /**
- * @author Matthew Weissel (mweissel3@gatech.edu)
+ * @author Matthew Weissel
  * @file math/trig64.h
  * @brief Defines 64-bit trigonometric functions.
  */

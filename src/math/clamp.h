@@ -1,5 +1,5 @@
 /**
- * @author Matthew Weissel (mweissel3@gatech.edu)
+ * @author Matthew Weissel
  * @file math/clamp.h
  * @brief Defines operations for clamping a numeric value to a given range.
  */

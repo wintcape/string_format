@@ -1,5 +1,5 @@
 /**
- * @author Matthew Weissel (mweissel3@gatech.edu)
+ * @author Matthew Weissel
  * @file math/conversion.h
  * @brief Measurement conversion rates.
  */

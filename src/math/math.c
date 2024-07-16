@@ -1,5 +1,5 @@
 /**
- * @author Matthew Weissel (mweissel3@gatech.edu)
+ * @author Matthew Weissel
  * @file math/math.c
  * @brief Implementation of the math header.
  * (see math/math.h for additional details)
