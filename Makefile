@@ -6,10 +6,8 @@ MACOS := macos
 ################################################################################
 
 default:
-        @echo "Please choose from the available targets:"
-		@echo
-		@echo "linux windows macos"
-		@exit 2
+	@echo Please choose from the available targets: linux windows macos
+	@exit 2
 
 ################################################################################
 
