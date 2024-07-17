@@ -167,7 +167,7 @@ _array_pop
 {
     if ( !array_length ( array ) )
     {
-        PRINT ( "_array_pop: Array is empty.\n" );
+        LOGERROR ( "_array_pop: Array is empty.\n" );
         return false;
     }
 
@@ -225,7 +225,7 @@ _array_remove
 {
     if ( !array_length ( array ) )
     {
-        PRINT ( "_array_remove: Array is empty.\n" );
+        LOGERROR ( "_array_remove: Array is empty.\n" );
         return array;
     }
 

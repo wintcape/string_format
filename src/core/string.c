@@ -172,11 +172,11 @@ string_i64
 {
     if ( radix < STRING_INTEGER_MIN_RADIX || radix > STRING_INTEGER_MAX_RADIX )
     {
-        PRINT ( "string_i64: Illegal value for radix argument: %u. Clamping to range [%u..%u].\n"
-              , radix
-              , STRING_INTEGER_MIN_RADIX
-              , STRING_INTEGER_MAX_RADIX
-              );
+        LOGERROR ( "string_i64: Illegal value for radix argument: %u. Clamping to range [%u..%u].\n"
+                 , radix
+                 , STRING_INTEGER_MIN_RADIX
+                 , STRING_INTEGER_MAX_RADIX
+                 );
         radix = CLAMP ( radix
                       , STRING_INTEGER_MIN_RADIX
                       , STRING_INTEGER_MAX_RADIX
@@ -206,11 +206,11 @@ string_u64
 {
     if ( radix < STRING_INTEGER_MIN_RADIX || radix > STRING_INTEGER_MAX_RADIX )
     {
-        PRINT ( "string_u64: Illegal value for radix argument: %u. Clamping to range [%u..%u].\n"
-              , radix
-              , STRING_INTEGER_MIN_RADIX
-              , STRING_INTEGER_MAX_RADIX
-              );
+        LOGERROR ( "string_u64: Illegal value for radix argument: %u. Clamping to range [%u..%u].\n"
+                 , radix
+                 , STRING_INTEGER_MIN_RADIX
+                 , STRING_INTEGER_MAX_RADIX
+                 );
         radix = CLAMP ( radix
                       , STRING_INTEGER_MIN_RADIX
                       , STRING_INTEGER_MAX_RADIX
@@ -258,11 +258,11 @@ string_f64
 
     if ( precision > STRING_FLOAT_MAX_PRECISION )
     {
-        PRINT ( "string_f64: Illegal value for precision argument: %u. Clamping to range [%u..%u]."
-              , precision
-              , 0
-              , STRING_FLOAT_MAX_PRECISION
-              );
+        LOGERROR ( "string_f64: Illegal value for precision argument: %u. Clamping to range [%u..%u]."
+                 , precision
+                 , 0
+                 , STRING_FLOAT_MAX_PRECISION
+                 );
         precision = STRING_FLOAT_MAX_PRECISION;
     }
     
