@@ -3805,6 +3805,30 @@ _string_format_parse_argument_array
                 _string_format_parse_argument_file_info ( state , format_specifier , value );
             }
             break;
+
+            case STRING_FORMAT_SPECIFIER_BOOLEAN:
+            {
+                bool value;
+                switch ( format_specifier->collection.array.stride )
+                {
+                    case sizeof ( bool ): value = *( ( bool* ) element );break;
+                    default:              value = 0                     ;break;
+                }
+                _string_format_parse_argument_boolean ( state , format_specifier , value );
+            }
+            break;
+
+            case STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED:
+            {
+                bool value;
+                switch ( format_specifier->collection.array.stride )
+                {
+                    case sizeof ( bool ): value = *( ( bool* ) element );break;
+                    default:              value = 0                     ;break;
+                }
+                _string_format_parse_argument_boolean_truncated ( state , format_specifier , value );
+            }
+            break;
             
             default:
             {}
