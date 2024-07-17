@@ -3796,13 +3796,22 @@ _string_format_parse_argument_array
 
             case STRING_FORMAT_SPECIFIER_FILE_INFO:
             {
-                file_t* value;
-                switch ( format_specifier->collection.array.stride )
+                file_t value;
+                if ( format_specifier->collection.array.stride == sizeof ( file_t ) )
                 {
-                    case sizeof ( file_t* ): value = *( ( file_t** ) element );break;
-                    default:                 value = 0                        ;break;
+                    memory_copy ( &value , element , sizeof ( file_t ) );
+                    _string_format_parse_argument_file_info ( state
+                                                            , format_specifier
+                                                            , &value
+                                                            );
                 }
-                _string_format_parse_argument_file_info ( state , format_specifier , value );
+                else
+                {
+                    _string_format_parse_argument_file_info ( state
+                                                            , format_specifier
+                                                            , 0
+                                                            );
+                }
             }
             break;
 
