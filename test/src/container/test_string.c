@@ -1808,8 +1808,6 @@ test_to_u64
     ////////////////////////////////////////////////////////////////////////////
     // Start test.
 
-    LOGWARN ( "The following errors are intentionally triggered by a test:" );
-
     // TEST 1: Empty string fails.
     EXPECT_NOT ( _to_u64 ( "" , &out ) );
 
@@ -1883,8 +1881,6 @@ test_to_i64
 
     ////////////////////////////////////////////////////////////////////////////
     // Start test.
-
-    LOGWARN ( "The following errors are intentionally triggered by a test:" );
 
     // TEST 1: Empty string fails.
     EXPECT_NOT ( _to_i64 ( "" , &out ) );
@@ -1992,8 +1988,6 @@ test_to_f64
 
     ////////////////////////////////////////////////////////////////////////////
     // Start test.
-
-    LOGWARN ( "The following errors are intentionally triggered by a test:" );
 
     // TEST 1: Empty string fails.
     EXPECT_NOT ( _to_f64 ( "" , &out ) );
@@ -2230,17 +2224,28 @@ test_string_format
     // array_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ARRAY );
     // global_allocation_count = MEMORY_ALLOCATION_COUNT;
 
+    file_t file_in;
+    file_stdin ( &file_in );
+    file_in.valid = false;
+    const char* invalid_file_out = "\n\t{"
+                                   "\n\t   File info:  Invalid file!"
+                                   "\n\t   Mode:       -"
+                                   "\n\t   Size:       -"
+                                   "\n\t   Position:   -"
+                                   "\n\t}\n"
+                                 ;
+    const file_t const_file_array_in[ 3 ] = { file_in , file_in , file_in };
     const f32 const_f32_array_in[ 16 ] = { -8 , -7 , -6 , -5 , -4 , -3 , -2 , -1 , 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 };
     const i8 const_i8_array_in[ 16 ] = { -8 , -7 , -6 , -5 , -4 , -3 , -2 , -1 , 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 };
     const char* const_string_array_in[ 4 ] = { "Hello" , " " , "world" , "!" };
     const char* const_string_in = "Hello world!";
+    file_t* file_array_in = array_create_from ( file_t , const_file_array_in , 3 );
     f32* f32_array_in = array_create_from ( f32 , const_f32_array_in , 16 );
     i8* i8_array_in = array_create_from ( i8 , const_i8_array_in , 16 );
     char** string_array_in = array_create_from ( char* , const_string_array_in , 4 );
     char* string_in = string_create_from ( const_string_in );
     char* really_long_string_in = _string_create ( 100 * STACK_STRING_MAX_SIZE /* MIN ( 1000 * STACK_STRING_MAX_SIZE , memory_amount_free () / 2 - KiB ( 1 ) ) */ );
     f64 float_in;
-
     char* string;
 
     // Verify there was no memory error prior to the test.
@@ -2645,23 +2650,13 @@ test_string_format
 
     // TEST 44: Format specifiers which have the same starting characters are parsed correctly.
     //          (File format specifier + floating point format specifier).
-    const char* invalid_file = "\n\t{"
-                               "\n\t   File info:  Invalid file!"
-                               "\n\t   Mode:       -"
-                               "\n\t   Size:       -"
-                               "\n\t   Position:   -"
-                               "\n\t}\n"
-                               ;
-    file_t file;
-    file_stdin ( &file );
-    file.valid = false; // Pass it an invalid file to get an output string which can be computed at compile-time.
     float_in = -1.0;
-    string = string_format ( "%+ffile%file." , &float_in , &file );
+    string = string_format ( "%+filfile%file." , &float_in , &file_in );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
-    EXPECT_EQ ( _string_length ( "-1file" ) + _string_length ( invalid_file ) + _string_length ( "." ) , string_length ( string ) );
-    EXPECT ( memory_equal ( string , "-1file" , _string_length ( "-1file" ) ) );
-    EXPECT ( memory_equal ( string + _string_length ( "-1file" ) , invalid_file , _string_length ( invalid_file ) ) );
-    EXPECT ( memory_equal ( string + _string_length ( "-1file" ) + _string_length ( invalid_file ) , "." , _string_length ( "." ) ) );
+    EXPECT_EQ ( _string_length ( "-1ilfile" ) + _string_length ( invalid_file_out ) + _string_length ( "." ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-1ilfile" , _string_length ( "-1ilfile" ) ) );
+    EXPECT ( memory_equal ( string + _string_length ( "-1ilfile" ) , invalid_file_out , _string_length ( invalid_file_out ) ) );
+    EXPECT ( memory_equal ( string + _string_length ( "-1ilfile" ) + _string_length ( invalid_file_out ) , "." , _string_length ( "." ) ) );
     string_destroy ( string );
     
     // TEST 45: If the format string contains an illegal format specifier, string_format ignores it.
@@ -3456,6 +3451,24 @@ test_string_format
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "F T T" ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "F T T" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 135: File format modifier, with fixed-length array format modifier.
+    string = string_format ( "%a[]file" , const_file_array_in , 3 , sizeof ( file_t ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( 3 * _string_length ( invalid_file_out )  , string_length ( string ) );
+    EXPECT ( memory_equal ( string , invalid_file_out , _string_length ( invalid_file_out ) ) );
+    EXPECT ( memory_equal ( string + _string_length ( invalid_file_out ) , invalid_file_out , _string_length ( invalid_file_out ) ) );
+    EXPECT ( memory_equal ( string + _string_length ( invalid_file_out ) + _string_length ( invalid_file_out ) , invalid_file_out , _string_length ( invalid_file_out ) ) );
+    string_destroy ( string );
+
+    // TEST 136: File format modifier, with resizable array format modifier.
+    string = string_format ( "%A[]file" , file_array_in );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( 3 * _string_length ( invalid_file_out )  , string_length ( string ) );
+    EXPECT ( memory_equal ( string , invalid_file_out , _string_length ( invalid_file_out ) ) );
+    EXPECT ( memory_equal ( string + _string_length ( invalid_file_out ) , invalid_file_out , _string_length ( invalid_file_out ) ) );
+    EXPECT ( memory_equal ( string + _string_length ( invalid_file_out ) + _string_length ( invalid_file_out ) , invalid_file_out , _string_length ( invalid_file_out ) ) );
     string_destroy ( string );
 
     // TODO: Add support for passing a single backslash as a multi-character

@@ -390,7 +390,6 @@ to_i64
     // Whitespace-only case.
     if ( i == string_length )
     {
-        LOGERROR ( "to_i64: Input string must be a valid i64 value (radix 10)." );
         return false;
     }
 
@@ -409,7 +408,6 @@ to_i64
     // Sign-only case.
     if ( i == string_length )
     {
-        LOGERROR ( "to_i64: Input string must be a valid i64 value (radix 10)." );
         return false;
     }
 
@@ -439,7 +437,6 @@ to_i64
         }
         else
         {
-            LOGERROR ( "to_i64: Input string must be a valid i64 value (radix 10)." );
             return false;
         }
     }
@@ -465,7 +462,6 @@ to_u64
     // Whitespace-only case.
     if ( i == string_length )
     {
-        LOGERROR ( "to_u64: Input string must be a valid u64 value (radix 10)." );
         return false;
     }
 
@@ -495,7 +491,6 @@ to_u64
         }
         else
         {
-            LOGERROR ( "to_u64: Input string must be a valid u64 value (radix 10)." );
             return false;
         }
     }
@@ -529,7 +524,6 @@ to_f64
     // Whitespace-only case.
     if ( i == string_length )
     {
-        LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
         return false;
     }
 
@@ -548,7 +542,6 @@ to_f64
     // Sign-only case.
     if ( i == string_length )
     {
-        LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
         return false;
     }
 
@@ -615,7 +608,6 @@ to_f64
     const u64 integral_length = point_index;
     if ( integral_length > 19 )
     {
-        LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
         return false;
     }
     
@@ -629,7 +621,6 @@ to_f64
         }
         else
         {
-            LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
             return false;
         }
     }
@@ -650,7 +641,6 @@ to_f64
         }
         else
         {
-            LOGERROR ( "to_f64: Input string must be a valid f64 value (radix 10)." );
             return false;
         }
     }

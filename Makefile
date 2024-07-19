@@ -6,7 +6,7 @@ MACOS := macos
 ################################################################################
 
 default:
-	@echo Please choose from the available targets: linux windows macos
+	@echo Please choose from the available targets:    linux  windows  macos
 	@exit 2
 
 ################################################################################
