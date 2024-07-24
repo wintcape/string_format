@@ -72,7 +72,7 @@ string_equal
 ,   const u64   s2_length
 );
 
-#define _string_equal (s1,s2)                         \
+#define _string_equal(s1,s2)                          \
     ({                                                \
         const char* s1__ = (s1);                      \
         const char* s2__ = (s2);                      \
