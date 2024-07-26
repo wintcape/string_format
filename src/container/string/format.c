@@ -25,46 +25,52 @@ string_format_token_t
 format_specifiers[ STRING_FORMAT_SPECIFIER_COUNT ] =
     {
         { .value = STRING_FORMAT_SPECIFIER_TOKEN_IGNORE
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_IGNORE ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_IGNORE ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_RAW
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_RAW ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_RAW ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_INTEGER
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_INTEGER ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_INTEGER ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_SHOW_FRACTIONAL
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_SHOW_FRACTIONAL ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_SHOW_FRACTIONAL ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_ABBREVIATED
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_ABBREVIATED ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_ABBREVIATED ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_FRACTIONAL_ONLY
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_FRACTIONAL_ONLY ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FLOATING_POINT_FRACTIONAL_ONLY ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_ADDRESS
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_ADDRESS ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_ADDRESS ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_CHARACTER
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_CHARACTER ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_CHARACTER ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_STRING
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_STRING ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_STRING ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING ) - 1 
-        }
-    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_RESIZABLE_STRING ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN ) - 1
         }
     ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN_TRUNCATED
-        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN_TRUNCATED ) - 1 
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN_TRUNCATED ) - 1
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO ) - 1
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_BYTESIZE
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_BYTESIZE ) - 1
+        }
+    ,   { .value = STRING_FORMAT_SPECIFIER_TOKEN_BYTESIZE_SHOW_FRACTIONAL
+        , .length = sizeof ( STRING_FORMAT_SPECIFIER_TOKEN_BYTESIZE_SHOW_FRACTIONAL ) - 1
         }
     };
 
@@ -349,9 +355,11 @@ void _string_format_validate_format_specifier_address ( state_t* state , const c
 void _string_format_validate_format_specifier_character ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
 void _string_format_validate_format_specifier_string ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
 void _string_format_validate_format_specifier_resizable_string ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
-void _string_format_validate_format_specifier_file_info ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
 void _string_format_validate_format_specifier_boolean ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
 void _string_format_validate_format_specifier_boolean_truncated ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
+void _string_format_validate_format_specifier_file_info ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
+void _string_format_validate_format_specifier_bytesize ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
+void _string_format_validate_format_specifier_bytesize_show_fractional ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
 void _string_format_validate_format_modifier_pad ( state_t* state , const char** read , const bool fixed , string_format_specifier_t* format_specifier );
 void _string_format_validate_format_modifier_sign ( state_t* state , const char** read , STRING_FORMAT_SIGN sign, string_format_specifier_t* format_specifier );
 void _string_format_validate_format_modifier_fix_precision ( state_t* state , const char** read , string_format_specifier_t* format_specifier );
@@ -385,9 +393,11 @@ u64 _string_format_parse_argument_floating_point_abbreviated ( state_t* state , 
 u64 _string_format_parse_argument_floating_point_fractional_only ( state_t* state , const string_format_specifier_t* format_specifier , const f64* arg );
 u64 _string_format_parse_argument_address ( state_t* state , const string_format_specifier_t* format_specifier , const void* arg );
 u64 _string_format_parse_argument_character ( state_t* state , const string_format_specifier_t* format_specifier , const char arg );
-u64 _string_format_parse_argument_file_info ( state_t* state , const string_format_specifier_t* format_specifier , file_t* arg );
 u64 _string_format_parse_argument_boolean ( state_t* state , const string_format_specifier_t* format_specifier , const bool arg );
 u64 _string_format_parse_argument_boolean_truncated ( state_t* state , const string_format_specifier_t* format_specifier , const bool arg );
+u64 _string_format_parse_argument_file_info ( state_t* state , const string_format_specifier_t* format_specifier , file_t* arg );
+u64 _string_format_parse_argument_bytesize ( state_t* state , const string_format_specifier_t* format_specifier , const u64 arg );
+u64 _string_format_parse_argument_bytesize_show_fractional ( state_t* state , const string_format_specifier_t* format_specifier , const u64 arg );
 u64 _string_format_parse_argument_string ( state_t* state , const string_format_specifier_t* format_specifier , const char* arg );
 u64 _string_format_parse_argument_array ( state_t* state , const string_format_specifier_t* format_specifier , const void* arg );
 
@@ -610,18 +620,56 @@ _string_format_validate_format_specifier
         // Handle special cases: differentiate between format specifiers
         // which have any number of matching characters at the start of the
         // token.
-        if ( i == STRING_FORMAT_SPECIFIER_FLOATING_POINT )
+        switch ( i )
         {
-            if ( _memory_equal ( read
-                               , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
-                               , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
-                               , STRING_FORMAT_READ_LIMIT ( state )
-                               ))
+            case STRING_FORMAT_SPECIFIER_FLOATING_POINT:
             {
-                _string_format_validate_format_specifier_file_info ( state , &read , format_specifier );
-                format_specifier->length += read - read_;
-                return;
+                if ( _memory_equal ( read
+                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
+                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
+                                   , STRING_FORMAT_READ_LIMIT ( state )
+                                   ))
+                {
+                    _string_format_validate_format_specifier_file_info ( state , &read , format_specifier );
+                    format_specifier->length += read - read_;
+                    return;
+                }
             }
+            break;
+
+            case STRING_FORMAT_SPECIFIER_STRING:
+            {
+                if ( _memory_equal ( read
+                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE ].value
+                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE ].length
+                                   , STRING_FORMAT_READ_LIMIT ( state )
+                                   ))
+                {
+                    _string_format_validate_format_specifier_bytesize ( state , &read , format_specifier );
+                    format_specifier->length += read - read_;
+                    return;
+                }
+            }
+            break;
+
+            case STRING_FORMAT_SPECIFIER_RESIZABLE_STRING:
+            {
+                if ( _memory_equal ( read
+                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL ].value
+                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL ].length
+                                   , STRING_FORMAT_READ_LIMIT ( state )
+                                   ))
+                {
+                    _string_format_validate_format_specifier_bytesize_show_fractional ( state , &read , format_specifier );
+                    format_specifier->length += read - read_;
+                    return;
+                }
+            }
+            break;
+
+            default:
+            {}
+            break;
         }
 
         // CASE: Match.
@@ -638,9 +686,11 @@ _string_format_validate_format_specifier
             case STRING_FORMAT_SPECIFIER_CHARACTER:                      _string_format_validate_format_specifier_character ( state , &read , format_specifier )                      ;break;
             case STRING_FORMAT_SPECIFIER_STRING:                         _string_format_validate_format_specifier_string ( state , &read , format_specifier )                         ;break;
             case STRING_FORMAT_SPECIFIER_RESIZABLE_STRING:               _string_format_validate_format_specifier_resizable_string ( state , &read , format_specifier )               ;break;
-            case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_validate_format_specifier_file_info ( state , &read , format_specifier )                      ;break;
             case STRING_FORMAT_SPECIFIER_BOOLEAN:                        _string_format_validate_format_specifier_boolean ( state , &read , format_specifier )                        ;break;
             case STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED:              _string_format_validate_format_specifier_boolean_truncated ( state , &read , format_specifier )              ;break;
+            case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_validate_format_specifier_file_info ( state , &read , format_specifier )                      ;break;
+            case STRING_FORMAT_SPECIFIER_BYTESIZE:                       _string_format_validate_format_specifier_bytesize ( state , &read , format_specifier )                       ;break;
+            case STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL:       _string_format_validate_format_specifier_bytesize_show_fractional ( state , &read , format_specifier )       ;break;
             default:                                                                                                                                                                   break;
         }
 
@@ -752,18 +802,56 @@ _string_format_validate_format_specifier
             // Handle special cases: differentiate between format specifiers
             // which have any number of matching characters at the start of the
             // token.
-            if ( k == STRING_FORMAT_SPECIFIER_FLOATING_POINT )
+            switch ( k )
             {
-                if ( _memory_equal ( read
-                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
-                                   , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
-                                   , STRING_FORMAT_READ_LIMIT ( state )
-                                   ))
+                case STRING_FORMAT_SPECIFIER_FLOATING_POINT:
                 {
-                    _string_format_validate_format_specifier_file_info ( state , &read , format_specifier );
-                    format_specifier->length += read - read_;
-                    return;
+                    if ( _memory_equal ( read
+                                       , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].value
+                                       , format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length
+                                       , STRING_FORMAT_READ_LIMIT ( state )
+                                       ))
+                    {
+                        _string_format_validate_format_specifier_file_info ( state , &read , format_specifier );
+                        format_specifier->length += read - read_;
+                        return;
+                    }
                 }
+                break;
+
+                case STRING_FORMAT_SPECIFIER_STRING:
+                {
+                    if ( _memory_equal ( read
+                                       , format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE ].value
+                                       , format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE ].length
+                                       , STRING_FORMAT_READ_LIMIT ( state )
+                                       ))
+                    {
+                        _string_format_validate_format_specifier_bytesize ( state , &read , format_specifier );
+                        format_specifier->length += read - read_;
+                        return;
+                    }
+                }
+                break;
+
+                case STRING_FORMAT_SPECIFIER_RESIZABLE_STRING:
+                {
+                    if ( _memory_equal ( read
+                                       , format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL ].value
+                                       , format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL ].length
+                                       , STRING_FORMAT_READ_LIMIT ( state )
+                                       ))
+                    {
+                        _string_format_validate_format_specifier_bytesize_show_fractional ( state , &read , format_specifier );
+                        format_specifier->length += read - read_;
+                        return;
+                    }
+                }
+                break;
+
+                default:
+                {}
+                break;
             }
 
             // CASE: Match.
@@ -787,9 +875,11 @@ _string_format_validate_format_specifier
                 case STRING_FORMAT_SPECIFIER_CHARACTER:                      _string_format_validate_format_specifier_character ( state , &read , format_specifier )                      ;break;
                 case STRING_FORMAT_SPECIFIER_STRING:                         _string_format_validate_format_specifier_string ( state , &read , format_specifier )                         ;break;
                 case STRING_FORMAT_SPECIFIER_RESIZABLE_STRING:               _string_format_validate_format_specifier_resizable_string ( state , &read , format_specifier )               ;break;
-                case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_validate_format_specifier_file_info ( state , &read , format_specifier )                      ;break;
                 case STRING_FORMAT_SPECIFIER_BOOLEAN:                        _string_format_validate_format_specifier_boolean ( state , &read , format_specifier )                        ;break;
                 case STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED:              _string_format_validate_format_specifier_boolean_truncated ( state , &read , format_specifier )              ;break;
+                case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_validate_format_specifier_file_info ( state , &read , format_specifier )                      ;break;
+                case STRING_FORMAT_SPECIFIER_BYTESIZE:                       _string_format_validate_format_specifier_bytesize ( state , &read , format_specifier )                       ;break;
+                case STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL:       _string_format_validate_format_specifier_bytesize_show_fractional ( state , &read , format_specifier )       ;break;
                 default:                                                                                                                                                                   break;
             }
 
@@ -1165,34 +1255,6 @@ _string_format_validate_format_specifier_resizable_string
 }
 
 void
-_string_format_validate_format_specifier_file_info
-(   state_t*                    state
-,   const char**                read
-,   string_format_specifier_t*  format_specifier
-)
-{
-    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length;
-
-    // Validate argument count.
-    if ( format_specifier->collection.tag == STRING_FORMAT_COLLECTION_NONE )
-    {
-        format_specifier->arg_count = 1;
-    }
-    if ( format_specifier->arg_count > state->args_remaining )
-    {
-        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
-        return;
-    }
-
-    // Validation complete.
-
-    if ( format_specifier->tag != STRING_FORMAT_SPECIFIER_INVALID )
-    {
-        format_specifier->tag = STRING_FORMAT_SPECIFIER_FILE_INFO;
-    }
-}
-
-void
 _string_format_validate_format_specifier_boolean
 (   state_t*                    state
 ,   const char**                read
@@ -1245,6 +1307,90 @@ _string_format_validate_format_specifier_boolean_truncated
     if ( format_specifier->tag != STRING_FORMAT_SPECIFIER_INVALID )
     {
         format_specifier->tag = STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED;
+    }
+}
+
+void
+_string_format_validate_format_specifier_file_info
+(   state_t*                    state
+,   const char**                read
+,   string_format_specifier_t*  format_specifier
+)
+{
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_FILE_INFO ].length;
+
+    // Validate argument count.
+    if ( format_specifier->collection.tag == STRING_FORMAT_COLLECTION_NONE )
+    {
+        format_specifier->arg_count = 1;
+    }
+    if ( format_specifier->arg_count > state->args_remaining )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // Validation complete.
+
+    if ( format_specifier->tag != STRING_FORMAT_SPECIFIER_INVALID )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_FILE_INFO;
+    }
+}
+
+void
+_string_format_validate_format_specifier_bytesize
+(   state_t*                    state
+,   const char**                read
+,   string_format_specifier_t*  format_specifier
+)
+{
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE ].length;
+
+    // Validate argument count.
+    if ( format_specifier->collection.tag == STRING_FORMAT_COLLECTION_NONE )
+    {
+        format_specifier->arg_count = 1;
+    }
+    if ( format_specifier->arg_count > state->args_remaining )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // Validation complete.
+
+    if ( format_specifier->tag != STRING_FORMAT_SPECIFIER_INVALID )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_BYTESIZE;
+    }
+}
+
+void
+_string_format_validate_format_specifier_bytesize_show_fractional
+(   state_t*                    state
+,   const char**                read
+,   string_format_specifier_t*  format_specifier
+)
+{
+    *read += format_specifiers[ STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL ].length;
+
+    // Validate argument count.
+    if ( format_specifier->collection.tag == STRING_FORMAT_COLLECTION_NONE )
+    {
+        format_specifier->arg_count = 1;
+    }
+    if ( format_specifier->arg_count > state->args_remaining )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_INVALID;
+        return;
+    }
+
+    // Validation complete.
+
+    if ( format_specifier->tag != STRING_FORMAT_SPECIFIER_INVALID )
+    {
+        format_specifier->tag = STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL;
     }
 }
 
@@ -3011,9 +3157,11 @@ _string_format_parse_next_argument
             case STRING_FORMAT_SPECIFIER_FLOATING_POINT_ABBREVIATED:     _string_format_parse_argument_floating_point_abbreviated ( state , format_specifier , ( f64* ) arg )     ;break;
             case STRING_FORMAT_SPECIFIER_FLOATING_POINT_FRACTIONAL_ONLY: _string_format_parse_argument_floating_point_fractional_only ( state , format_specifier , ( f64* ) arg ) ;break;
             case STRING_FORMAT_SPECIFIER_ADDRESS:                        _string_format_parse_argument_address ( state , format_specifier , ( void* ) arg )                       ;break;
-            case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_parse_argument_file_info ( state , format_specifier , ( file_t* ) arg )                   ;break;
             case STRING_FORMAT_SPECIFIER_BOOLEAN:                        _string_format_parse_argument_boolean ( state , format_specifier , ( bool ) arg )                        ;break;
             case STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED:              _string_format_parse_argument_boolean_truncated ( state , format_specifier , ( bool ) arg )              ;break;
+            case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_parse_argument_file_info ( state , format_specifier , ( file_t* ) arg )                   ;break;
+            case STRING_FORMAT_SPECIFIER_BYTESIZE:                       _string_format_parse_argument_bytesize ( state , format_specifier , ( u64 ) arg )                        ;break;
+            case STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL:       _string_format_parse_argument_bytesize_show_fractional ( state , format_specifier , ( u64 ) arg )        ;break;
             default:                                                                                                                                                               break;
         }
     }
@@ -3400,6 +3548,35 @@ _string_format_parse_argument_character
 }
 
 u64
+_string_format_parse_argument_boolean
+(   state_t*                            state
+,   const string_format_specifier_t*    format_specifier
+,   const bool                          arg
+)
+{
+    const char* string = arg ? "True" : "False";
+    return _string_format_append ( &state->string
+                                 , string
+                                 , _string_length ( string )
+                                 , format_specifier
+                                 );
+}
+
+u64
+_string_format_parse_argument_boolean_truncated
+(   state_t*                            state
+,   const string_format_specifier_t*    format_specifier
+,   const bool                          arg
+)
+{
+    return _string_format_append ( &state->string
+                                 , string_char ( arg ? 'T' : 'F' )
+                                 , 1
+                                 , format_specifier
+                                 );
+}
+
+u64
 _string_format_parse_argument_file_info
 (   state_t*                            state
 ,   const string_format_specifier_t*    format_specifier
@@ -3460,29 +3637,28 @@ _string_format_parse_argument_file_info
         mode = "Unknown";
     }
 
-    // Stringify file bytesize.
+    // Obtain file bytesize.
     const u64 size = file_size ( arg );
-    f64 size_amount;
-    const char* size_unit = string_bytesize ( size , &size_amount );
 
-    // Stringify file position.
+    // Obtain file position.
     const u64 position = file_position_get ( arg );
     const f64 position_ratio = size ? 100.00 * ( ( ( f64 ) position ) / ( ( f64 ) size ) )
                                     :  0.0
                                     ;
 
-    // Print the stringified file fields to a new string with pretty formatting,
+    // Print the acquired file fields to a new string with pretty formatting,
     // append that string to the string being constructed, then delete it.
     string_t* formatted = string_format ( "\n\t{"
                                           "\n\t   File info:  %s"
                                           "\n\t   Mode:       %s"
-                                          "\n\t   Size:       %.2f %s"
+                                          "\n\t   Size:       %.2size"
                                           "\n\t   Position:   %u (%.2f%%)"
                                           "\n\t}\n"
                                         , path
                                         , mode
-                                        , &size_amount , size_unit
-                                        , position , &position_ratio
+                                        , size
+                                        , position
+                                        , &position_ratio
                                         );
     _string_format_append ( &state->string
                           , formatted
@@ -3495,30 +3671,133 @@ _string_format_parse_argument_file_info
 }
 
 u64
-_string_format_parse_argument_boolean
+_string_format_parse_argument_bytesize
 (   state_t*                            state
 ,   const string_format_specifier_t*    format_specifier
-,   const bool                          arg
+,   const u64                           arg
 )
 {
-    const char* string = arg ? "True" : "False";
+    f64 value;
+    const char* unit = string_bytesize ( arg , &value );
+
+    char string[ STRING_FLOAT_MAX_LENGTH + 4 + 1 ];
+    i64 integer = value;
+    f64 fractional = value - integer;
+    const bool hide_sign = format_specifier->sign.tag == STRING_FORMAT_SIGN_HIDE
+                        && value < 0
+                        ;
+    const bool show_sign = format_specifier->sign.tag == STRING_FORMAT_SIGN_SHOW
+                        && value >= 0
+                        ;
+    u64 string_length;
+
+    if ( hide_sign )
+    {
+        string_length = string_f64 ( -value
+                                   , format_specifier->fix_precision.precision
+                                   , false
+                                   , string
+                                   );
+    }
+    else if ( show_sign )
+    {
+        string[ 0 ] = '+';
+        string_length = string_f64 ( value
+                                   , format_specifier->fix_precision.precision
+                                   , false
+                                   , string + 1
+                                   ) + 1;
+    }
+    else
+    {
+        string_length = string_f64 ( value
+                                   , format_specifier->fix_precision.precision
+                                   , false
+                                   , string
+                                   );
+    }
+
+    if ( !fractional )
+    {
+        u64 index;
+        if ( string_contains ( string , string_length
+                             , string_char ( '.' ) , 1
+                             , false
+                             , &index
+                             ))
+        {
+            string_length = index;
+        }
+    }
+
+    string[ string_length ] = ' ';
+    string_length += 1;
+
+    memory_copy ( string + string_length , unit , _string_length ( unit ) );
+    string_length += _string_length ( unit );
+    string[ string_length ] = 0; // Append terminator.
+
     return _string_format_append ( &state->string
                                  , string
-                                 , _string_length ( string )
+                                 , string_length
                                  , format_specifier
                                  );
 }
 
 u64
-_string_format_parse_argument_boolean_truncated
+_string_format_parse_argument_bytesize_show_fractional
 (   state_t*                            state
 ,   const string_format_specifier_t*    format_specifier
-,   const bool                          arg
+,   const u64                           arg
 )
 {
+    f64 value;
+    const char* unit = string_bytesize ( arg , &value );
+    char string[ STRING_FLOAT_MAX_LENGTH + 4 + 1 ];
+    const bool hide_sign = format_specifier->sign.tag == STRING_FORMAT_SIGN_HIDE
+                        && value < 0
+                        ;
+    const bool show_sign = format_specifier->sign.tag == STRING_FORMAT_SIGN_SHOW
+                        && value >= 0
+                        ;
+    u64 string_length;
+
+    if ( hide_sign )
+    {
+        string_length = string_f64 ( -value
+                                   , format_specifier->fix_precision.precision
+                                   , false
+                                   , string
+                                   );
+    }
+    else if ( show_sign )
+    {
+        string[ 0 ] = '+';
+        string_length = string_f64 ( value
+                                   , format_specifier->fix_precision.precision
+                                   , false
+                                   , string + 1
+                                   ) + 1;
+    }
+    else
+    {
+        string_length = string_f64 ( value
+                                   , format_specifier->fix_precision.precision
+                                   , false
+                                   , string
+                                   );
+    }
+
+    string[ string_length ] = ' ';
+    string_length += 1;
+
+    memory_copy ( string + string_length , unit , _string_length ( unit ) );
+    string_length += _string_length ( unit );
+    string[ string_length ] = 0; // Append terminator.
+
     return _string_format_append ( &state->string
-                                 , string_char ( arg ? 'T' : 'F' )
-                                 , 1
+                                 , string
+                                 , string_length
                                  , format_specifier
                                  );
 }
@@ -3794,27 +4073,6 @@ _string_format_parse_argument_array
             }
             break;
 
-            case STRING_FORMAT_SPECIFIER_FILE_INFO:
-            {
-                file_t value;
-                if ( format_specifier->collection.array.stride == sizeof ( file_t ) )
-                {
-                    memory_copy ( &value , element , sizeof ( file_t ) );
-                    _string_format_parse_argument_file_info ( state
-                                                            , format_specifier
-                                                            , &value
-                                                            );
-                }
-                else
-                {
-                    _string_format_parse_argument_file_info ( state
-                                                            , format_specifier
-                                                            , 0
-                                                            );
-                }
-            }
-            break;
-
             case STRING_FORMAT_SPECIFIER_BOOLEAN:
             {
                 bool value;
@@ -3836,6 +4094,57 @@ _string_format_parse_argument_array
                     default:              value = 0                     ;break;
                 }
                 _string_format_parse_argument_boolean_truncated ( state , format_specifier , value );
+            }
+            break;
+
+            case STRING_FORMAT_SPECIFIER_FILE_INFO:
+            {
+                file_t value;
+                if ( format_specifier->collection.array.stride == sizeof ( file_t ) )
+                {
+                    memory_copy ( &value , element , sizeof ( file_t ) );
+                    _string_format_parse_argument_file_info ( state
+                                                            , format_specifier
+                                                            , &value
+                                                            );
+                }
+                else
+                {
+                    _string_format_parse_argument_file_info ( state
+                                                            , format_specifier
+                                                            , 0
+                                                            );
+                }
+            }
+            break;
+
+            case STRING_FORMAT_SPECIFIER_BYTESIZE:
+            {
+                u64 value;
+                switch ( format_specifier->collection.array.stride )
+                {
+                    case sizeof ( u8 ):  value = *( ( u8* ) element )  ;break;
+                    case sizeof ( u16 ): value = *( ( u16* ) element ) ;break;
+                    case sizeof ( u32 ): value = *( ( u32* ) element ) ;break;
+                    case sizeof ( u64 ): value = *( ( u64* ) element ) ;break;
+                    default:             value = 0                     ;break;
+                }
+                _string_format_parse_argument_bytesize ( state , format_specifier , value );
+            }
+            break;
+
+            case STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL:
+            {
+                u64 value;
+                switch ( format_specifier->collection.array.stride )
+                {
+                    case sizeof ( u8 ):  value = *( ( u8* ) element )  ;break;
+                    case sizeof ( u16 ): value = *( ( u16* ) element ) ;break;
+                    case sizeof ( u32 ): value = *( ( u32* ) element ) ;break;
+                    case sizeof ( u64 ): value = *( ( u64* ) element ) ;break;
+                    default:             value = 0                     ;break;
+                }
+                _string_format_parse_argument_bytesize_show_fractional ( state , format_specifier , value );
             }
             break;
             
