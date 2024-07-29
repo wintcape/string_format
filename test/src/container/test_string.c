@@ -620,6 +620,126 @@ test_string_insert_and_remove_random
 }
 
 u8
+test_string_empty
+( void )
+{
+    // u64 global_amount_allocated;
+    // u64 array_amount_allocated;
+    // u64 global_allocation_count;
+
+    // // Copy the current global allocator state prior to the test.
+    // global_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ALL );
+    // array_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ARRAY );
+    // global_allocation_count = MEMORY_ALLOCATION_COUNT;
+
+    char* string = string_create ();
+
+    // Verify there was no memory error prior to the test.
+    EXPECT_NEQ ( 0 , string );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Start test.
+
+    // TEST 1: string_empty succeeds on empty null-terminated string.
+    EXPECT ( string_empty ( "" ) );
+
+    // TEST 2: string_empty fails on non-empty null-terminated string.
+    EXPECT_NOT ( string_empty ( "a" ) );
+
+    // TEST 3: string_empty succeeds on empty string created with the _string_create class of functions.
+    EXPECT_EQ ( 0 , string_length ( string ) ); // Verify empty prior to testing.
+    EXPECT ( string_empty ( string ) );
+
+    // TEST 4: string_empty fails on non-empty string created with the _string_create class of functions.
+    string_append ( string , "a" , _string_length ( "a" ) );
+    EXPECT_NEQ ( 0 , string_length ( string ) ); // Verify non-empty prior to testing.
+    EXPECT_NOT ( string_empty ( string ) );
+
+    // TEST 5: string_empty fails if the provided string is null.
+    EXPECT_NOT ( string_empty ( 0 ) );
+
+    // End test.
+    ////////////////////////////////////////////////////////////////////////////
+
+    string_destroy ( string );
+
+    // // Verify the test allocated and freed all of its memory properly.
+    // EXPECT_EQ ( global_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ALL ) );
+    // EXPECT_EQ ( array_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ARRAY ) );
+    // EXPECT_EQ ( global_allocation_count , MEMORY_ALLOCATION_COUNT );
+
+    return true;
+}
+
+u8
+test_string_truncate
+( void )
+{
+    // u64 global_amount_allocated;
+    // u64 array_amount_allocated;
+    // u64 global_allocation_count;
+
+    // // Copy the current global allocator state prior to the test.
+    // global_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ALL );
+    // array_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ARRAY );
+    // global_allocation_count = MEMORY_ALLOCATION_COUNT;
+
+    string_t* string = string_create ();
+
+    // Verify there was no memory error prior to the test.
+    EXPECT_NEQ ( 0 , string );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Start test.
+
+    // TEST 1: string_truncate succeeds on empty string.
+    string_clear ( string );
+    string_truncate ( string , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , string_length ( string ) ) );
+
+    // TEST 2: string_truncate does not modify the string if the provided length is greater than (or equal to) than the length of the string.
+    string_clear ( string );
+    _string_append ( string , "Hello world!" );
+    string_truncate ( string , string_length ( string ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello world!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello world!" , string_length ( string ) ) );
+    // ( x2 )
+    string_clear ( string );
+    _string_append ( string , "Hello world!" );
+    string_truncate ( string , string_length ( string ) + 1 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello world!" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello world!" , string_length ( string ) ) );
+
+    // TEST 3: string_truncate truncates the string if the provided length is less than the length of the string.
+    string_truncate ( string , _string_length ( "Hello" ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello" , string_length ( string ) ) );
+
+    // TEST 4: string_truncate clears the string if the provided index is zero.
+    string_truncate ( string , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , string_length ( string ) ) );
+
+    // End test.
+    ////////////////////////////////////////////////////////////////////////////
+
+    string_destroy ( string );
+
+    // // Verify the test allocated and freed all of its memory properly.
+    // EXPECT_EQ ( global_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ALL ) );
+    // EXPECT_EQ ( array_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ARRAY ) );
+    // EXPECT_EQ ( global_allocation_count , MEMORY_ALLOCATION_COUNT );
+
+    return true;
+}
+
+u8
 test_string_trim
 ( void )
 {
@@ -718,58 +838,6 @@ test_string_trim
     string_destroy ( string );
 
     // // Verify the test allocated and freed all of its memory properly.
-    // EXPECT_EQ ( global_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ALL ) );
-    // EXPECT_EQ ( array_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ARRAY ) );
-    // EXPECT_EQ ( global_allocation_count , MEMORY_ALLOCATION_COUNT );
-
-    return true;
-}
-
-u8
-test_string_empty
-( void )
-{
-    // u64 global_amount_allocated;
-    // u64 array_amount_allocated;
-    // u64 global_allocation_count;
-
-    // // Copy the current global allocator state prior to the test.
-    // global_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ALL );
-    // array_amount_allocated = memory_amount_allocated ( MEMORY_TAG_ARRAY );
-    // global_allocation_count = MEMORY_ALLOCATION_COUNT;
-
-    char* string = string_create ();
-
-    // Verify there was no memory error prior to the test.
-    EXPECT_NEQ ( 0 , string );
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Start test.
-
-    // TEST 1: string_empty succeeds on empty null-terminated string.
-    EXPECT ( string_empty ( "" ) );
-
-    // TEST 2: string_empty fails on non-empty null-terminated string.
-    EXPECT_NOT ( string_empty ( "a" ) );
-
-    // TEST 3: string_empty succeeds on empty string created with the _string_create class of functions.
-    EXPECT_EQ ( 0 , string_length ( string ) ); // Verify empty prior to testing.
-    EXPECT ( string_empty ( string ) );
-
-    // TEST 4: string_empty fails on non-empty string created with the _string_create class of functions.
-    string_append ( string , "a" , _string_length ( "a" ) );
-    EXPECT_NEQ ( 0 , string_length ( string ) ); // Verify non-empty prior to testing.
-    EXPECT_NOT ( string_empty ( string ) );
-
-    // TEST 5: string_empty fails if the provided string is null.
-    EXPECT_NOT ( string_empty ( 0 ) );
-
-    // End test.
-    ////////////////////////////////////////////////////////////////////////////
-
-    string_destroy ( string );
-
-    // Verify the test allocated and freed all of its memory properly.
     // EXPECT_EQ ( global_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ALL ) );
     // EXPECT_EQ ( array_amount_allocated , memory_amount_allocated ( MEMORY_TAG_ARRAY ) );
     // EXPECT_EQ ( global_allocation_count , MEMORY_ALLOCATION_COUNT );
@@ -3530,6 +3598,7 @@ test_string_format
 
     string_destroy ( string_in );
     string_destroy ( really_long_string_in );
+    array_destroy ( file_array_in );
     array_destroy ( f32_array_in );
     array_destroy ( i8_array_in );
     array_destroy ( string_array_in );
@@ -3552,6 +3621,7 @@ test_register_string
     // test_register ( test_string_insert_and_remove , "Testing string 'insert' and 'remove' operations." );
     // test_register ( test_string_insert_and_remove_random , "Testing string 'insert' and 'remove' operations with random indices and elements." );
     test_register ( test_string_empty , "Detecting an empty string." );
+    test_register ( test_string_truncate , "Testing string 'truncate' operation." );
     test_register ( test_string_trim , "Testing string 'trim' operation." );
     test_register ( test_string_contains , "Testing string 'contains' operation." );
     test_register ( test_string_reverse , "Testing string in-place 'reverse' operation." );
