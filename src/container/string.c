@@ -19,7 +19,6 @@ __string_create
         LOGERROR ( "__string_create: Value of initial_capacity argument must be non-zero." );
         return 0;
     }
-    
     char* string = array_create ( char , initial_capacity );
     _array_field_set ( string , ARRAY_FIELD_LENGTH , 1 );
     return string;//                                 ^ terminator
@@ -173,6 +172,20 @@ __string_clear
 {
     string[ 0 ] = 0; // Append terminator.
     _array_field_set ( string , ARRAY_FIELD_LENGTH , 1 );
+    return string;
+}
+
+string_t*
+__string_truncate
+(   string_t*   string
+,   u64         length
+)
+{
+    if ( length < string_length ( string ) )
+    {
+        string[ length ] = 0; // Append terminator.
+        _array_field_set ( string , ARRAY_FIELD_LENGTH , length + 1 );
+    }
     return string;
 }
 

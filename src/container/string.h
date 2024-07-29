@@ -5,8 +5,6 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "common.h"
-
 #include "container/array.h"
 #include "container/string/format.h"
 #include "core/string.h"
@@ -42,11 +40,11 @@ __string_create
 /**
  * @brief Creates a resizable copy of an existing string. O(n).
  * 
- * Use _string_copy to explicitly specify string length, or string_create_from
+ * Use string_copy to explicitly specify string length, or string_create_from
  * to compute the length of a null-terminated string ( O(n) ) before passing it
  * to __string_copy. If the string being copied is itself a resizable string
  * (i.e. a string itself created via the string_create class of functions),
- * string_copy may be used to implicitly fetch the current length of the
+ * _string_copy may be used to implicitly fetch the current length of the
  * resizable string ( O(1) ) before passing it to __string_copy.
  * 
  * Uses dynamic memory allocation. Call string_destroy to free.
@@ -61,7 +59,10 @@ __string_copy
 ,   const u64   src_length
 );
 
-#define string_copy(string)                                        \
+#define string_copy(string,length) \
+    __string_copy ( (string) , (length) )
+
+#define _string_copy(string)                                       \
     ({                                                             \
         const string_t* string__ = (string);                       \
         __string_copy ( (string__) , string_length ( string__ ) ); \
@@ -72,9 +73,6 @@ __string_copy
         const char* string__ = (string);                            \
         __string_copy ( (string__) , _string_length ( string__ ) ); \
     })
-
-#define _string_copy(string,length) \
-    __string_copy ( (string) , (length) )
 
 /**
  * @brief Frees the memory used by a provided resizable string.
@@ -224,6 +222,22 @@ __string_clear
 
 #define string_clear(string) \
     __string_clear ( string )
+
+/**
+ * @brief **Effectively** truncates a resizable string. O(1).
+ * 
+ * @param string The resizable string to truncate. Must be non-zero.
+ * @param length The new string length.
+ * @return The resizable string truncated to length characters.
+ */
+string_t*
+__string_truncate
+(   string_t*   string
+,   u64         length
+);
+
+#define string_truncate(string,length) \
+    __string_truncate ( (string) , (length) )
 
 /**
  * @brief Replaces all instances of a substring within a string with a different

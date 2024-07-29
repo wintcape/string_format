@@ -13,7 +13,8 @@ typedef char string_t;
 /** @brief Type and instance definitions for format specifier tags. */
 typedef enum
 {
-    STRING_FORMAT_SPECIFIER_IGNORE
+    STRING_FORMAT_SPECIFIER_NESTED
+,   STRING_FORMAT_SPECIFIER_IGNORE
 ,   STRING_FORMAT_SPECIFIER_RAW
 ,   STRING_FORMAT_SPECIFIER_INTEGER
 ,   STRING_FORMAT_SPECIFIER_FLOATING_POINT
@@ -28,7 +29,6 @@ typedef enum
 ,   STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED
 ,   STRING_FORMAT_SPECIFIER_FILE_INFO
 ,   STRING_FORMAT_SPECIFIER_BYTESIZE
-,   STRING_FORMAT_SPECIFIER_BYTESIZE_SHOW_FRACTIONAL
 
 ,   STRING_FORMAT_SPECIFIER_COUNT
 }
@@ -63,6 +63,10 @@ STRING_FORMAT_MODIFIER;
 #define STRING_FORMAT_SPECIFIER_TOKEN_ID \
     "%"
 
+/** @brief Format specifier: nested format substring. */
+#define STRING_FORMAT_SPECIFIER_TOKEN_NESTED_BEGIN "{" /** @brief Begin nested format substring. */
+#define STRING_FORMAT_SPECIFIER_TOKEN_NESTED_END   "}" /** @brief End nested format substring. */
+
 /** @brief Format specifier: ignore. */
 #define STRING_FORMAT_SPECIFIER_TOKEN_IGNORE \
     STRING_FORMAT_SPECIFIER_TOKEN_ID
@@ -81,7 +85,6 @@ STRING_FORMAT_MODIFIER;
 #define STRING_FORMAT_SPECIFIER_TOKEN_BOOLEAN_TRUNCATED              "b"    /** @brief Format specifier: boolean (truncated). */
 #define STRING_FORMAT_SPECIFIER_TOKEN_FILE_INFO                      "file" /** @brief Format specifier: file info. */
 #define STRING_FORMAT_SPECIFIER_TOKEN_BYTESIZE                       "size" /** @brief Format specifier: bytesize. */
-#define STRING_FORMAT_SPECIFIER_TOKEN_BYTESIZE_SHOW_FRACTIONAL       "Size" /** @brief Format specifier: bytesize (always show fractional). */
 
 #define STRING_FORMAT_MODIFIER_TOKEN_WILDCARD                        "?"    /** @brief Format modifier wildcard. */
 
@@ -134,10 +137,13 @@ STRING_FORMAT_MODIFIER;
  * %B : Boolean value. Prints either "True" or "False" respectively.
  * %b : Boolean value (truncated). Prints either "T" or "F" respectively.
  * %file : File info. The corresponding argument must be a file handle.
- * %Size : Bytesize.
- * %size : Bytesize. If the value is a whole numbe after conversion to
- *         appropriate units, no decimal point or fractional part will be
- *         printed.
+ * %size : Bytesize.
+ * 
+ *                                  NESTING
+ * 
+ * %{} : Prints a format substring and any number of nested format specifiers
+ *       within the braces immediately. Can be combined with padding format
+ *       modifiers to generate . Use `\{` and `\}` to print braces.
  *      
  * ============================= FORMAT MODIFIERS ==============================
  * 
@@ -146,50 +152,32 @@ STRING_FORMAT_MODIFIER;
  * 
  *                                  PADDING
  * 
- * - Pl<character><number>{} : Fix print width to <number>. If needed, pad with
- *                             <character> to the left.
- *                             Works with any number of format specifiers
- *                             contained within the braces. Can be nested.
- *                             Use `\{` and `\}` to print braces.
- * - Pr<character><number>{} : Fix print width to <number>. If needed, pad with
- *                             <character> to the right.
- *                             Works with any number of format specifiers
- *                             contained within the braces. Can be nested.
- *                             Use `\{` and `\}` to print braces.
- * - pl<character><number>{} : Set minimum print width to <number>. If needed,
- *                             pad with <character> to the left.
- *                             Works with any number of format specifiers
- *                             contained within the braces. Can be nested.
- *                             Use `\{` and `\}` to print braces.
- * - pr<character><number>{} : Set minimum print width to <number>. If needed,
- *                             pad with <character> to the right.
- *                             Works with any number of format specifiers
- *                             contained within the braces. Can be nested.
- *                             Use `\{` and `\}` to print braces.
- * - Pl'<string>'<number>{} : Fix print width to <number>. If needed, pad with
- *                            <string> to the left. Use `\'` to print
- *                            apostrophe.
- *                            Works with any number of format specifiers
- *                            contained within the braces. Can be nested.
- *                            Use `\{` and `\}` to print braces.
- * - Pr'<string>'<number>{} : Fix print width to <number>. If needed, pad with
- *                            <string> to the right. Use `\'` to print
- *                            apostrophe.
- *                            Works with any number of format specifiers
- *                            contained within the braces. Can be nested.
- *                            Use `\{` and `\}` to print braces.
- * - pl'<string>'<number>{} : Set minimum print width to <number>. If needed,
- *                            pad with <string> to the left. Use `\'` to print
- *                            apostrophe.
- *                            Works with any number of format specifiers
- *                            contained within the braces. Can be nested.
- *                            Use `\{` and `\}` to print braces.
- * - pr'<string>'<number>{} : Set minimum print width to <number>. If needed,
- *                            pad with <string> to the right. Use `\'` to print
- *                            apostrophe.
- *                            Works with any number of format specifiers
- *                            contained within the braces. Can be nested.
- *                            Use `\{` and `\}` to print braces.
+ * - Pl<character><number> : Fix print width to <number>. If needed, pad with
+ *                           <character> to the left.
+ *                           Works with any format specifier.
+ * - Pr<character><number> : Fix print width to <number>. If needed, pad with
+ *                           <character> to the right.
+ *                           Works with any format specifier.
+ * - pl<character><number> : Set minimum print width to <number>. If needed,
+ *                           pad with <character> to the left.
+ *                           Works with any format specifier.
+ * - pr<character><number> : Set minimum print width to <number>. If needed,
+ *                           pad with <character> to the right.
+ *                           Works with any format specifier.
+ * - Pl'<string>'<number> : Fix print width to <number>. If needed, pad with
+ *                          <string> to the left. Use `\'` to print apostrophe.
+ *                          Works with any format specifier.
+ * - Pr'<string>'<number> : Fix print width to <number>. If needed, pad with
+ *                          <string> to the right. Use `\'` to print apostrophe.
+ *                          Works with any format specifier.
+ * - pl'<string>'<number> : Set minimum print width to <number>. If needed,
+ *                          pad with <string> to the left. Use `\'` to print
+ *                          apostrophe.
+ *                          Works with any format specifier.
+ * - pr'<string>'<number> : Set minimum print width to <number>. If needed,
+ *                          pad with <string> to the right. Use `\'` to print
+ *                          apostrophe.
+ *                          Works with any format specifier.
  * 
  *                                  NUMERIC
  * 

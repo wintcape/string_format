@@ -7,7 +7,6 @@
 #include "core/logger.h"
 
 #include "container/string.h"
-
 #include "platform/memory.h"
 
 /** @brief Output message prefixes. */
@@ -108,7 +107,7 @@ logger_startup
     }
     else
     {
-        state = memory_allocate ( memory_requirement /* , MEMORY_TAG_LOGGER */ );
+        state = memory_allocate ( memory_requirement /*, MEMORY_TAG_LOGGER */ );
         state->owns_memory = true;
     }
 
@@ -139,13 +138,13 @@ logger_startup
     return true;
 }
 
-void
+bool
 logger_shutdown
 ( void )
 {
     if ( !state )
     {
-        return;
+        return true;
     }
 
     state->initialized = false;
@@ -164,6 +163,7 @@ logger_shutdown
     }
 
     state = 0;
+    return true;
 }
 
 void
@@ -183,7 +183,7 @@ logger_log
     // Write plaintext to log file.
     if ( state && state->initialized && state->file.valid )
     {
-        plaintext = string_copy ( raw );
+        plaintext = _string_copy ( raw );
         __string_strip_ansi ( plaintext );
         _string_prepend ( plaintext , log_level_prefixes[ level ] );
         logger_file_append ( plaintext , string_length ( plaintext ) );
@@ -234,23 +234,33 @@ print
 void
 assertf
 (   const char* expression
-,   const char* message
 ,   const char* file
-,   const i32   line
+,   const i64   line
+,   const char* message
+,   args_t      args
 )
 {
-    if ( !( *message ) )
+    if ( string_empty ( message ) )
     {
-        LOGFATAL ( "Assertion failure in file %s (line %i): %s"
+        LOGFATAL ( "Assertion failure in file:  %s:%i\n\t"
+                   "Expression:  %s"
                  , file , line , expression
                  );
+        return;
     }
-    else
-    {
-        LOGFATAL ( "Assertion failure in file %s (line %i): %s\n\tMessage: %s"
-                 , file , line , expression , message
-                 );
-    }
+
+    string_t* raw = string_format ( "Assertion failure in file:  %s:%i"
+                                    ANSI_CC_RESET "\n\t" LOG_LEVEL_COLOR_FATAL
+                                    "Expression:  %s"
+                                    ANSI_CC_RESET "\n\t" LOG_LEVEL_COLOR_FATAL
+                                    "Message: %s"
+                                  , file
+                                  , line
+                                  , expression
+                                  , message
+                                  );
+    logger_log ( LOG_FATAL , raw , args );
+    string_destroy ( raw );
 }
 
 void
@@ -267,7 +277,6 @@ _print
                , &written
                );
 }
-
 
 void
 logger_file_append

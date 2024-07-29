@@ -820,8 +820,8 @@ string_free
     const u64 header_size = sizeof ( u64 );
     string = ( void* )( ( ( u64 ) string ) - header_size );
     memory_free ( string
-                // , *( ( u64* ) string )
-                // , MEMORY_TAG_STRING
+                //, *( ( u64* ) string )
+                //, MEMORY_TAG_STRING
                 );
 }
 

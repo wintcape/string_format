@@ -52,7 +52,7 @@ file_exists
  * the functions included by this filesystem header, use file_update to update
  * these fields before invoking the corresponding filesystem function.
  * 
- * @param path The filepath.
+ * @param path The filepath of the file to open.
  * @param mode Mode flag.
  * @param file Output buffer for file handle.
  * @return true if file opened successfully; false otherwise.
@@ -67,7 +67,7 @@ file_open
 /**
  * @brief Attempts to close a file on the host platform.
  * 
- * @param file Handle to the file to close.
+ * @param file The file to close.
  */
 void
 file_close
@@ -80,7 +80,7 @@ file_close
  * Useful if the file's size or read-write position may change by means other
  * than the functions included by this filesystem header.
  * 
- * @param file Handle to the file to update.
+ * @param file The file to update.
  * @return true on success; false if both the file size and read-write position
  * were unchanged.
  */
@@ -92,7 +92,7 @@ file_update
 /**
  * @brief Queries the filepath of a file on the host platform.
  * 
- * @param file Handle to a file.
+ * @param file The file to query.
  * @return The filepath of file.
  */
 const char*
@@ -103,7 +103,7 @@ file_path
 /**
  * @brief Queries the mode of a file on the host platform.
  * 
- * @param file Handle to a file.
+ * @param file The file to query.
  * @return The mode of file.
  */
 FILE_MODE
@@ -114,7 +114,7 @@ file_mode
 /**
  * @brief Queries the size (in bytes) of a file on the host platform.
  * 
- * @param file Handle to a file.
+ * @param file The file to query.
  * @return The filesize of file in bytes.
  */
 u64
@@ -126,7 +126,7 @@ file_size
  * @brief Queries the current read-write position within a file on the host
  * platform.
  * 
- * @param file Handle to a file.
+ * @param file The file to query.
  * @return The current read-write position within file.
  */
 u64
@@ -138,8 +138,8 @@ file_position_get
  * @brief Sets the current read-write position within a file on the host
  * platform.
  * 
- * @param file Handle to a file.
- * @param position The position to set.
+ * @param file The file to query.
+ * @param position The read-write position to set.
  * @return true on success; false otherwise.
  */
 bool
@@ -152,7 +152,7 @@ file_position_set
  * @brief Reads a specified amount of content from a file on the host platform
  * into an output buffer.
  * 
- * @param file Handle to the file to read.
+ * @param file The file to read.
  * @param size Number of bytes to read.
  * @param dst Output buffer for the content.
  * @param read Output buffer to hold number of bytes read.
@@ -168,11 +168,12 @@ file_read
 
 /**
  * @brief Reads content from a file from the host platform into a resizable
- * string buffer until EOF or line break encountered (see container/string.h).
+ * string buffer until EOF or line break encountered.
  * 
- * Uses dynamic memory allocation. Call string_destroy to free.
+ * Uses dynamic memory allocation. Call string_destroy to free
+ * (see container/string.h).
  * 
- * @param file Handle to the file to read.
+ * @param file The file to read.
  * @param dst Output buffer to hold the handle to the resizable output string.
  * @return true if the handle stored in dst is valid; false otherwise.
  */
@@ -186,10 +187,9 @@ file_read_line
  * @brief Generates a copy of the entire contents of a file on the host
  * platform.
  * 
- * Uses dynamic memory allocation. Call string_free to free.
- * (see core/string.h)
+ * Uses dynamic memory allocation. Call string_free to free (see core/string.h).
  * 
- * @param file Handle to the file to read.
+ * @param file The file to read.
  * @param dst Output buffer to hold the handle to the null-terminated output
  * string.
  * @param read Output buffer to hold number of bytes read.
@@ -208,11 +208,10 @@ file_read_all
  * Use file_write to explicitly specify string length, or _file_write to compute
  * the length of a null-terminated string before passing it to file_write.
  * 
- * @param file Handle to the file to write to.
+ * @param file The file to write to.
  * @param size Number of bytes to write.
  * @param src The data to write.
  * @param written Output buffer to hold number of bytes written.
- *
  * @return true if src written to file successfully; false otherwise.
  */
 bool
@@ -238,10 +237,9 @@ file_write
  * to compute the length of a null-terminated string before passing it to
  * file_write_line.
  * 
- * @param file Handle to the file to write to.
+ * @param file The file to write to.
  * @param size Number of bytes to write.
  * @param src The string to write.
- *
  * @return true if src written to file successfully; false otherwise.
  */
 bool

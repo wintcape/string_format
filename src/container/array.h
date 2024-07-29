@@ -169,7 +169,7 @@ _array_resize
  * pass the address of a value to append.
  * 
  * @param array The resizable array to append to. Must be non-zero.
- * @param src The handle to the value to append. Must be non-zero.
+ * @param src The address of the value to append. Must be non-zero.
  * @return The array (possibly with new address).
  */
 array_t*
@@ -188,11 +188,11 @@ _array_push
  * @brief Inserts an element into a resizable array at a specified index. O(n).
  * 
  * Use array_insert to insert a literal value into the array; use _array_insert
- * to pass a handle to the value to insert.
+ * to pass the address of the value to insert.
  * 
  * @param array The resizable array to append to. Must be non-zero.
  * @param index The index to insert at.
- * @param src The handle to the value to insert. Must be non-zero.
+ * @param src The address of the value to insert. Must be non-zero.
  * @return The array (possibly with new address).
  */
 array_t*

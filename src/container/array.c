@@ -17,28 +17,18 @@ _array_create
 {
     if ( !initial_capacity || !stride )
     {
-        if ( !initial_capacity )
-        {
-            LOGERROR ( "_array_create: Value of initial_capacity argument must be non-zero." );
-        }
-        if ( !stride )
-        {
-            LOGERROR ( "_array_create: Value of stride argument must be non-zero." );
-        }
+        if ( !initial_capacity ) LOGERROR ( "_array_create: Value of initial_capacity argument must be non-zero." );
+        if ( !stride )           LOGERROR ( "_array_create: Value of stride argument must be non-zero." );
         return 0;
     }
-    
     const u64 header_size = ARRAY_FIELD_COUNT * sizeof ( u64 );
     const u64 content_size = initial_capacity * stride;
     const u64 size = header_size + content_size;
-
     u64* array = memory_allocate ( size /* , MEMORY_TAG_ARRAY */ );
     memory_clear ( array , size );
-
     array[ ARRAY_FIELD_CAPACITY ] = initial_capacity;
     array[ ARRAY_FIELD_LENGTH ]   = 0;
     array[ ARRAY_FIELD_STRIDE ]   = stride;
-
     return array + ARRAY_FIELD_COUNT;
 }
 
@@ -52,8 +42,8 @@ _array_destroy
         return;
     }
     memory_free ( ( ( u64* ) array ) - ARRAY_FIELD_COUNT
-                // , array_size ( array )
-                // , MEMORY_TAG_ARRAY
+                //, array_size ( array )
+                //, MEMORY_TAG_ARRAY
                 );
 }
 
@@ -128,10 +118,8 @@ _array_resize
     {
         return old_array;
     }
-
     const u64 length = MIN ( array_length ( old_array ) , minimum_capacity );
     const u64 stride = array_stride ( old_array );
-
     void* new_array = _array_create ( minimum_capacity , stride );
     memory_copy ( new_array , old_array , length * stride );
     _array_field_set ( new_array , ARRAY_FIELD_LENGTH , length );
@@ -147,12 +135,10 @@ _array_push
 {
     const u64 length = array_length ( array );
     const u64 stride = array_stride ( array );
-
     if ( length >= array_capacity ( array ) )
     {
         array = array_resize ( array , length );
     }
-
     const u64 dst = ( ( u64 ) array );
     memory_copy ( ( void* )( dst + length * stride ) , src , stride );
     _array_field_set ( array , ARRAY_FIELD_LENGTH , length + 1 );
@@ -167,13 +153,11 @@ _array_pop
 {
     if ( !array_length ( array ) )
     {
-        LOGERROR ( "_array_pop: Array is empty.\n" );
+        LOGWARN ( "_array_pop: Array is empty." );
         return false;
     }
-
     const u64 length = array_length ( array ) - 1;
     const u64 stride = array_stride ( array );
-
     const u64 src = ( ( u64 ) array );
     if ( dst )
     {
@@ -192,20 +176,17 @@ _array_insert
 {
     const u64 length = array_length ( array );
     const u64 stride = array_stride ( array );
-    
     if ( index > length )
     {
         LOGERROR ( "_array_insert: Called with out of bounds index: %i (index) > %i (array length)."
-                   , index , length
-                   );
+                 , index , length
+                 );
         return array;
     }
-    
     if ( length >= array_capacity ( array ) )
     {
         array = array_resize ( array , length );
     }
-    
     const u64 dst = ( ( u64 ) array );
     memory_move ( ( void* )( dst + ( index + 1 ) * stride )
                 , ( void* )( dst + index * stride )
@@ -225,13 +206,11 @@ _array_remove
 {
     if ( !array_length ( array ) )
     {
-        LOGERROR ( "_array_remove: Array is empty.\n" );
+        LOGWARN ( "_array_remove: Array is empty." );
         return array;
     }
-
     const u64 length = array_length ( array ) - 1;
     const u64 stride = array_stride ( array );
-    
     if ( index > length )
     {
         LOGERROR ( "_array_remove: Called with out of bounds index: %i (index) >= %i (array length)."
@@ -239,7 +218,6 @@ _array_remove
                  );
         return array;
     }
-
     const u64 src = ( ( u64 ) array );
     if ( dst )
     {

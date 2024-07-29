@@ -6,10 +6,7 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include "common.h"
-
 #include "core/string.h"
-
 #include "platform/platform.h"
 #include "platform/filesystem.h"
 
@@ -36,6 +33,8 @@ LOG_LEVEL;
 
 // Auto-disable DEBUG and TRACE level logging for release builds.
 #if VERSION_RELEASE == 1
+#undef LOG_DEBUG_ENABLED
+#undef LOG_TRACE_ENABLED
 #define LOG_DEBUG_ENABLED 0
 #define LOG_TRACE_ENABLED 0
 #endif
@@ -89,8 +88,10 @@ logger_startup
 
 /**
  * @brief Terminates the logger subsystem.
+ * 
+ * @return true on success; false otherwise.
  */
-void
+bool
 logger_shutdown
 ( void );
 

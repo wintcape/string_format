@@ -152,10 +152,10 @@ test_string_create_and_destroy
 
     // TEST 3: string_copy.
 
-    char* string_copy = string_copy ( string );
+    char* copy = _string_copy ( string );
 
     // Verify there was no memory error prior to the test.
-    EXPECT_NEQ ( 0 , string_copy );
+    EXPECT_NEQ ( 0 , copy );
 
     // // TEST 3.1: string_copy performed **one** memory allocation.
     // EXPECT_EQ ( global_allocation_count + 1 + 1 , MEMORY_ALLOCATION_COUNT );
@@ -164,13 +164,13 @@ test_string_create_and_destroy
     // EXPECT_EQ ( array_amount_allocated + array_size ( string ) + array_size ( string_copy ) , memory_amount_allocated ( MEMORY_TAG_ARRAY ) );
     
     // TEST 3.3: String created via string_copy has identical length to the string it was created from.
-    EXPECT_EQ ( string_length ( string_copy ) , string_length ( string ) );
+    EXPECT_EQ ( string_length ( copy ) , string_length ( string ) );
     
     // TEST 3.4: String created via string_copy has identical characters to the string it was created from.
-    EXPECT ( memory_equal ( string , string_copy , string_length ( string ) + 1 ) );
+    EXPECT ( memory_equal ( string , copy , string_length ( string ) + 1 ) );
 
     // // TEST 3.5: string_destroy restores the global allocator state.
-    string_destroy ( string_copy );
+    string_destroy ( copy );
     string_destroy ( string );
     // EXPECT_EQ ( global_amount_allocated_ , memory_amount_allocated ( MEMORY_TAG_ALL ) );
     // EXPECT_EQ ( array_amount_allocated_ , memory_amount_allocated ( MEMORY_TAG_ARRAY ) );
@@ -2649,7 +2649,7 @@ test_string_format
     string_destroy ( string );
 
     // TEST 44: Format specifiers which have the same starting characters are parsed correctly.
-    //          (File format specifier + floating point format specifier).
+    // ( x1 ) File format specifier + floating point format specifier
     float_in = -1.0;
     string = string_format ( "%+filfile%file." , &float_in , &file_in );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
@@ -2657,6 +2657,12 @@ test_string_format
     EXPECT ( memory_equal ( string , "-1ilfile" , _string_length ( "-1ilfile" ) ) );
     EXPECT ( memory_equal ( string + _string_length ( "-1ilfile" ) , invalid_file_out , _string_length ( invalid_file_out ) ) );
     EXPECT ( memory_equal ( string + _string_length ( "-1ilfile" ) + _string_length ( invalid_file_out ) , "." , _string_length ( "." ) ) );
+    string_destroy ( string );
+    // ( x2 ) Bytesize format specifier + string format specifier
+    string = string_format ( "%.2siz%.2size" , &"Hello world!" , 0 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "Hello world!iz0 B" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "Hello world!iz0 B" , _string_length ( "Hello world!iz0 B" ) ) );
     string_destroy ( string );
     
     // TEST 45: If the format string contains an illegal format specifier, string_format ignores it.
@@ -2753,14 +2759,14 @@ test_string_format
     EXPECT ( memory_equal ( string , "Hell%P???r4i" , string_length ( string ) ) );
     string_destroy ( string );
 
-    // TEST 58: Fix-column width format modifier with multiple wildcards and null format substring.
+    // TEST 58: Nested format substring, fix-column width format modifier with multiple wildcards.
     string = string_format ( "%Pl??{}" , '4' , 11 );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "44444444444" ) , string_length ( string ) );
     EXPECT ( memory_equal ( string , "44444444444" , string_length ( string ) ) );
     string_destroy ( string );
 
-    // TEST 59: Min-column width format modifier with multiple wildcards and nested format substring.
+    // TEST 59: Nested format substring, min-column width format modifier with multiple wildcards.
     float_in = -999416.9999875;
     string = string_format ( "%pl??{%i\t\t%.?f\t\t%s}" , '*' , 48 , -23428476892 , 7 , &float_in , &"^v" );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
@@ -2768,7 +2774,7 @@ test_string_format
     EXPECT ( memory_equal ( string , "***************-23428476892\t\t-999416.9999875\t\t^v" , string_length ( string ) ) );
     string_destroy ( string );
 
-    // TEST 60: Fix-column width format modifier with nested format substrings can handle nest depth > 0 and escape sequences for printing `{` and `}` characters without changing the depth.
+    // TEST 60: Nested format substring, fix-column width format modifier can handle nest depth > 0 and escape sequences for printing `{` and `}` characters without changing the depth.
     string = string_format ( "%Pl??{ \\{\\} %Pr??{ %s \\{\\} } }%Pl??{%ac}%Pr??{ %s \\{\\} }" , ' ' , 45 , ' ' , 32 , &"Hello world!" , ' ' , 32 , &"Hello world!" , _string_length ( "Hello world!" ) + 1 , sizeof ( char ) , ' ' , 32 , &"Hello world!" );
     EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
     EXPECT_EQ ( _string_length ( "         {}  Hello world! {}                 { `H`, `e`, `l`, `l`, `o`, ` `,  Hello world! {}                " ) , string_length ( string ) );
@@ -3469,6 +3475,47 @@ test_string_format
     EXPECT ( memory_equal ( string , invalid_file_out , _string_length ( invalid_file_out ) ) );
     EXPECT ( memory_equal ( string + _string_length ( invalid_file_out ) , invalid_file_out , _string_length ( invalid_file_out ) ) );
     EXPECT ( memory_equal ( string + _string_length ( invalid_file_out ) + _string_length ( invalid_file_out ) , invalid_file_out , _string_length ( invalid_file_out ) ) );
+    string_destroy ( string );
+
+    // TEST 137: Bytesize format specifier.
+    string = string_format ( "%size | %size | %size | %size | %size | %size | %size | %size" , KiB ( 1 ) - 1 , KiB ( 1 ) , MiB ( 1 ) - 1 , MiB ( 1 ) , GiB ( 1 ) - 1 , GiB ( 1 ) , KiB ( 1400 ) , GiB ( 400.25 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "1023 B | 1 KiB | 1023.999023 KiB | 1 MiB | 1023.999999 MiB | 1 GiB | 1.367187 MiB | 400.250000 GiB" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "1023 B | 1 KiB | 1023.999023 KiB | 1 MiB | 1023.999999 MiB | 1 GiB | 1.367187 MiB | 400.250000 GiB" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 138: Bytesize format modifier, with fix-precision modifier.
+    string = string_format ( "%.2size | %.2size | %.2size | %.2size | %.2size | %.2size | %.2size | %.2size" , KiB ( 1 ) - 1 , KiB ( 1 ) , MiB ( 1 ) - 1 , MiB ( 1 ) , GiB ( 1 ) - 1 , GiB ( 1 ) , KiB ( 1400 ) , GiB ( 400.25 ) );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "1023 B | 1 KiB | 1023.99 KiB | 1 MiB | 1023.99 MiB | 1 GiB | 1.36 MiB | 400.25 GiB" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "1023 B | 1 KiB | 1023.99 KiB | 1 MiB | 1023.99 MiB | 1 GiB | 1.36 MiB | 400.25 GiB" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 139: Empty nested format substring, standalone (no padding).
+    string = string_format ( "%{}" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 140: Nested format substring, standalone (no padding).
+    string = string_format ( "%i %{%c,%c,%c,%c} %i" , -1 , 'a' , 'b' , 'c' , 'd' , 123 );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "-1 a,b,c,d 123" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "-1 a,b,c,d 123" , string_length ( string ) ) );
+    string_destroy ( string );
+
+    // TEST 141: Nested format substring cannot be combined with collection format modifiers.
+    string = string_format ( "%A{    }" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%A{    }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%A{    }" , string_length ( string ) ) );
+    string_destroy ( string );
+    // ( x2 )
+    string = string_format ( "%a{    }" );
+    EXPECT_NEQ ( 0 , string ); // Verify there was no memory error prior to the test.
+    EXPECT_EQ ( _string_length ( "%a{    }" ) , string_length ( string ) );
+    EXPECT ( memory_equal ( string , "%a{    }" , string_length ( string ) ) );
     string_destroy ( string );
 
     // TODO: Add support for passing a single backslash as a multi-character

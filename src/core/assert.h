@@ -24,19 +24,23 @@
 /**
  * @brief Interface for logging information on assertion failure.
  * 
- * @param expression The expression to assert. Must be non-zero.
- * @param message The message to log on assertion failure. Must be non-zero.
- * @param file The file containing the caller of the BRKDBG invocation that was
- * triggered. Must be non-zero.
- * @param line The line number in file containing the caller of the BRKDBG
- * invocation that was triggered.
+ * The expression may be passed as a null-terminated string.
+ * 
+ * @param expression The expression which failed (stringified). Must be
+ * non-zero.
+ * @param file The path of the file containing the assertion. Must be non-zero.
+ * @param line The line number in file containing the assertion.
+ * @param message Formatted message to log on assertion failure
+ * (see container/string/format.h) (optional). Pass 0 for no additional message.
+ * @param args Variadic argument list (see common/args.h).
  */
 void
 assertf
 (   const char* expression
-,   const char* message
 ,   const char* file
-,   const i32   line
+,   const i64   line
+,   const char* message
+,   args_t      args
 );
 
 /**
@@ -44,46 +48,54 @@ assertf
  * 
  * @param expression The expression to assert.
  */
-#define ASSERT(expression)                                  \
-{                                                           \
-    if ( expression ) {}                                    \
-    else                                                    \
-    {                                                       \
-        assertf ( #expression , "" , __FILE__ , __LINE__ ); \
-        BRKDBG ();                                          \
-    }                                                       \
+#define ASSERT(expression)                                      \
+{                                                               \
+    if ( expression ) {}                                        \
+    else                                                        \
+    {                                                           \
+        assertf ( #expression , __FILE__ , __LINE__ , "" , 0 ); \
+        BRKDBG ();                                              \
+    }                                                           \
 }
 
 /**
- * @brief Definition for runtime assertion (with message).
+ * @brief Definition for runtime assertion (with formatted message).
  * 
  * @param expression The expression to assert.
- * @param message The message to log on assertion failure.
+ * @param message Formatted message to log on assertion failure
+ * (see container/string/format.h).
  */
-#define ASSERTM(expression,message)                              \
-{                                                                \
-    if ( expression ) {}                                         \
-    else                                                         \
-    {                                                            \
-        assertf ( #expression , message , __FILE__ , __LINE__ ); \
-        BRKDBG ();                                               \
-    }                                                            \
+#define ASSERTM(expression,message,...)      \
+{                                            \
+    if ( expression ) {}                     \
+    else                                     \
+    {                                        \
+        DISABLE_WARNING ( -Wint-conversion ) \
+        assertf ( #expression                \
+                , __FILE__                   \
+                , __LINE__                   \
+                , message                    \
+                , ARGS ( __VA_ARGS__ )       \
+                );                           \
+        REENABLE_WARNING ()                  \
+        BRKDBG ();                           \
+    }                                        \
 }
 
 /**
  * @brief Definition for debug-mode-only runtime assertions.
  * 
- * @param expr The expression to assert.
+ * @param expression The expression to assert.
  */
 #if VERSION_DEBUG == 1
-#define ASSERT_DEBUG(expression)                            \
-{                                                           \
-    if ( expression ) {}                                    \
-    else                                                    \
-    {                                                       \
-        assertf ( #expression , "" , __FILE__ , __LINE__ ); \
-        BRKDBG ();                                          \
-    }                                                       \
+#define ASSERT_DEBUG(expression)                                \
+{                                                               \
+    if ( expression ) {}                                        \
+    else                                                        \
+    {                                                           \
+        assertf ( #expression , __FILE__ , __LINE__ , "" , 0 ); \
+        BRKDBG ();                                              \
+    }                                                           \
 }
 #else
 #define ASSERT_DEBUG(expression)
