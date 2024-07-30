@@ -439,7 +439,6 @@ _string_format
                                                      );
         return string_create_from ( "" );
     }
-    
     state_t state;
     state.format = format;
     state.format_length = _string_length ( state.format );
@@ -1768,6 +1767,8 @@ _string_format_validate_format_modifier_pad
         return;
     }
 
+    // Validation complete.
+
     format_specifier->modifier.padding.fixed = fixed;
     format_specifier->modifiers[ modifier ] = true;
 }
@@ -3068,6 +3069,7 @@ _string_format_parse_next_argument
         // Parse and print the argument according to the format specifier.
         switch ( format_specifier->tag )
         {
+            case STRING_FORMAT_SPECIFIER_NESTED:                         _string_format_parse_argument_nested ( state , format_specifier )                                        ;break;
             case STRING_FORMAT_SPECIFIER_RAW:                            _string_format_parse_argument_raw ( state , format_specifier , ( u64 ) arg )                             ;break;
             case STRING_FORMAT_SPECIFIER_CHARACTER:                      _string_format_parse_argument_character ( state , format_specifier , ( char ) arg )                      ;break;
             case STRING_FORMAT_SPECIFIER_INTEGER:                        _string_format_parse_argument_integer ( state , format_specifier , ( i64 ) arg )                         ;break;
@@ -3080,7 +3082,6 @@ _string_format_parse_next_argument
             case STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED:              _string_format_parse_argument_boolean_truncated ( state , format_specifier , ( bool ) arg )              ;break;
             case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_parse_argument_file_info ( state , format_specifier , ( file_t* ) arg )                   ;break;
             case STRING_FORMAT_SPECIFIER_BYTESIZE:                       _string_format_parse_argument_bytesize ( state , format_specifier , ( u64 ) arg )                        ;break;
-            case STRING_FORMAT_SPECIFIER_NESTED:                         _string_format_parse_argument_nested ( state , format_specifier )                                        ;break;
             default:                                                                                                                                                               break;
         }
     }

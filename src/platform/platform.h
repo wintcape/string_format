@@ -382,7 +382,7 @@ platform_file_write_line
  */
 void
 platform_file_stdin
-(   file_t* file_
+(   file_t* file
 );
 
 /**
@@ -392,7 +392,7 @@ platform_file_stdin
  */
 void
 platform_file_stdout
-(   file_t* file_
+(   file_t* file
 );
 
 /**
@@ -402,7 +402,7 @@ platform_file_stdout
  */
 void
 platform_file_stderr
-(   file_t* file_
+(   file_t* file
 );
 
 // End filesystem operations.
