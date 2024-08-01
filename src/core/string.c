@@ -273,6 +273,15 @@ string_f64
         abbreviated = true;
     }
 
+    // Print sign? Y/N
+    const bool sign = value < 0;
+    if ( sign )
+    {
+        value = -value;
+        *dst = '-';
+        dst += 1;
+    }
+
     u64 length = 0;
 
     // Abbreviated notation.
@@ -315,7 +324,7 @@ string_f64
         const f64 fractional = value - integer;
 
         // Integral portion.
-        length += string_i64 ( integer , radix , dst );
+        length += string_u64 ( integer , radix , dst );
 
         // Append point.
         dst[ length ] = '.';
@@ -343,9 +352,9 @@ string_f64
             length += fractional_string_length;
         }
     }
-
+    
     dst[ length ] = 0; // Append terminator.
-    return length;
+    return length + sign;
 }
 
 const char*

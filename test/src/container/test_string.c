@@ -1860,6 +1860,32 @@ test_string_f64
     // Should be 3.14159265358979323846
     EXPECT_EQ ( _string_length ( "-3.14159265358979311616" ) , string_f64 ( -3.14159265358979323846 , STRING_FLOAT_MAX_PRECISION , false , string ) );
     EXPECT ( memory_equal ( string , "-3.14159265358979311616" , _string_length ( "-3.14159265358979311616" ) ) );
+    
+    // TEST 13: -0.01
+
+    // TEST 13.1: Abbreviated.
+    EXPECT_EQ ( _string_length ( "-1.000000E-2" ) , string_f64 ( -0.01 , default_precision , true , string ) );
+    EXPECT ( memory_equal ( string , "-1.000000E-2" , _string_length ( "-1.000000E-2" ) ) );
+
+    // TEST 13.2: Default precision.
+    EXPECT_EQ ( _string_length ( "-0.010000" ) , string_f64 ( -0.01 , default_precision , false , string ) );
+    EXPECT ( memory_equal ( string , "-0.010000" , _string_length ( "-0.010000" ) ) );
+
+    // TEST 13.3: 0 precision.
+    EXPECT_EQ ( _string_length ( "-0." ) , string_f64 ( -0.01 , 0 , false , string ) );
+    EXPECT ( memory_equal ( string , "-0." , _string_length ( "-0." ) ) );
+
+    // TEST 13.4: 1 precision.
+    EXPECT_EQ ( _string_length ( "-0.0" ) , string_f64 ( -0.01 , 1 , false , string ) );
+    EXPECT ( memory_equal ( string , "-0.0" , _string_length ( "-0.0" ) ) );
+
+    // TEST 13.5: 2 precision.
+    EXPECT_EQ ( _string_length ( "-0.01" ) , string_f64 ( -0.01 , 2 , false , string ) );
+    EXPECT ( memory_equal ( string , "-0.01" , _string_length ( "-0.01" ) ) );
+
+    // TEST 13.6: Maximum precision.
+    EXPECT_EQ ( _string_length ( "-0.01000000000000000000" ) , string_f64 ( -0.01 , STRING_FLOAT_MAX_PRECISION , false , string ) );
+    EXPECT ( memory_equal ( string , "-0.01000000000000000000" , _string_length ( "-0.01000000000000000000" ) ) );
 
     // End test.
     ////////////////////////////////////////////////////////////////////////////
