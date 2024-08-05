@@ -419,6 +419,7 @@ platform_file_read_line
     u64 bytes_remaining = file->size - file->position;
     if ( !bytes_remaining )
     {
+        *dst = string;
         return true;
     }
 
@@ -497,6 +498,7 @@ platform_file_read_all
     // Nothing to copy? Y/N
     if ( !file->size )
     {
+        *dst = string;
         return true;
     }
 

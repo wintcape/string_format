@@ -108,24 +108,24 @@ format_modifiers[ STRING_FORMAT_MODIFIER_COUNT ] =
         }
     };
 
-/** @brief Type and instance definitions for a string padding tag. */
+/** @brief Type and instance definitions for a string padding.alignment. */
 typedef enum
 {
-    STRING_FORMAT_PADDING_NONE
-,   STRING_FORMAT_PADDING_LEFT
-,   STRING_FORMAT_PADDING_RIGHT
+    STRING_FORMAT_ALIGNMENT_LEFT
+,   STRING_FORMAT_ALIGNMENT_RIGHT
 }
-STRING_FORMAT_PADDING;
+STRING_FORMAT_ALIGNMENT;
 
 /** @brief Type definition for a container to hold string padding configuration info. */
 typedef struct
 {
-    STRING_FORMAT_PADDING   tag;
+    bool                    tag;
     bool                    fixed;
+    STRING_FORMAT_ALIGNMENT alignment;
     u64                     width;
 
-    bool                    wildcard_value;
     string_format_token_t   value;
+    bool                    value_set_from_wildcard;
 }
 string_format_padding_t;
 
@@ -439,6 +439,7 @@ _string_format
                                                      );
         return string_create_from ( "" );
     }
+    
     state_t state;
     state.format = format;
     state.format_length = _string_length ( state.format );
@@ -571,11 +572,11 @@ _string_format_validate_format_specifier
     memory_clear ( format_specifier->modifiers
                  , sizeof ( bool ) * STRING_FORMAT_MODIFIER_COUNT
                  );
-    format_specifier->modifier.padding.tag = STRING_FORMAT_PADDING_NONE;
+    format_specifier->modifier.padding.tag = false;
     format_specifier->modifier.padding.width = 0;
-    format_specifier->modifier.padding.wildcard_value = false;
     format_specifier->modifier.padding.value.value = 0;
     format_specifier->modifier.padding.value.length = 0;
+    format_specifier->modifier.padding.value_set_from_wildcard = false;
     format_specifier->modifier.sign.tag = STRING_FORMAT_SIGN_NONE;
     format_specifier->modifier.radix.radix = STRING_FORMAT_DEFAULT_RADIX;
     format_specifier->modifier.fix_precision.tag = false;
@@ -1412,8 +1413,8 @@ _string_format_validate_format_modifier_pad
 )
 {
     const STRING_FORMAT_MODIFIER modifier = fixed
-                                          ? STRING_FORMAT_MODIFIER_PAD_MINIMUM
-                                          : STRING_FORMAT_MODIFIER_PAD
+                                          ? STRING_FORMAT_MODIFIER_PAD
+                                          : STRING_FORMAT_MODIFIER_PAD_MINIMUM
                                           ;
     *read += format_modifiers[ modifier ].length;
 
@@ -1442,7 +1443,7 @@ _string_format_validate_format_modifier_pad
                        , STRING_FORMAT_READ_LIMIT ( state )
                        ))
     {
-        format_specifier->modifier.padding.tag = STRING_FORMAT_PADDING_LEFT;
+        format_specifier->modifier.padding.alignment = STRING_FORMAT_ALIGNMENT_LEFT;
         *read += sizeof ( "l" ) - 1;
     }
 
@@ -1453,7 +1454,7 @@ _string_format_validate_format_modifier_pad
                             , STRING_FORMAT_READ_LIMIT ( state )
                             ))
     {
-        format_specifier->modifier.padding.tag = STRING_FORMAT_PADDING_RIGHT;
+        format_specifier->modifier.padding.alignment = STRING_FORMAT_ALIGNMENT_RIGHT;
         *read += sizeof ( "r" ) - 1;
     }
 
@@ -1474,6 +1475,7 @@ _string_format_validate_format_modifier_pad
         // Retrieve the value of the next argument in the variadic argument list.
         // Expects a string matching either "l" or "r".
         char* alignment = *( ( char** )( state->next_arg ) );
+        u64 alignment_length = alignment ? _string_length ( alignment ) : 0;
 
         // Consume the argument that was just parsed.
         _string_format_consume_arguments ( state , 1 );
@@ -1484,20 +1486,20 @@ _string_format_validate_format_modifier_pad
         if ( _memory_equal ( alignment
                            , "l"
                            , sizeof ( "l" ) - 1
-                           , STRING_FORMAT_READ_LIMIT ( state )
+                           , alignment + alignment_length
                            ))
         {
-            format_specifier->modifier.padding.tag = STRING_FORMAT_PADDING_LEFT;
+            format_specifier->modifier.padding.alignment = STRING_FORMAT_ALIGNMENT_LEFT;
         }
 
         // CASE: Pad right.
         else if ( _memory_equal ( alignment
                                 , "r"
                                 , sizeof ( "r" ) - 1
-                                , STRING_FORMAT_READ_LIMIT ( state )
+                                , alignment + alignment_length
                                 ))
         {
-            format_specifier->modifier.padding.tag = STRING_FORMAT_PADDING_RIGHT;
+            format_specifier->modifier.padding.alignment = STRING_FORMAT_ALIGNMENT_RIGHT;
         }
         
         // CASE: Other (invalid).
@@ -1572,7 +1574,7 @@ _string_format_validate_format_modifier_pad
         // Expects an ASCII character.
         format_specifier->modifier.padding.value.value = ( ( char* )( state->next_arg ) );
         format_specifier->modifier.padding.value.length = 1;
-        format_specifier->modifier.padding.wildcard_value = true;
+        format_specifier->modifier.padding.value_set_from_wildcard = true;
 
         // Consume the argument that was just parsed.
         _string_format_consume_arguments ( state , 1 );
@@ -1621,7 +1623,7 @@ _string_format_validate_format_modifier_pad
                                                             ? _string_length ( format_specifier->modifier.padding.value.value )
                                                             : 0
                                                             ;
-            format_specifier->modifier.padding.wildcard_value = true;
+            format_specifier->modifier.padding.value_set_from_wildcard = true;
 
             // Consume the argument that was just parsed.
             _string_format_consume_arguments ( state , 1 );
@@ -1769,6 +1771,7 @@ _string_format_validate_format_modifier_pad
 
     // Validation complete.
 
+    format_specifier->modifier.padding.tag = true;
     format_specifier->modifier.padding.fixed = fixed;
     format_specifier->modifiers[ modifier ] = true;
 }
@@ -3069,7 +3072,6 @@ _string_format_parse_next_argument
         // Parse and print the argument according to the format specifier.
         switch ( format_specifier->tag )
         {
-            case STRING_FORMAT_SPECIFIER_NESTED:                         _string_format_parse_argument_nested ( state , format_specifier )                                        ;break;
             case STRING_FORMAT_SPECIFIER_RAW:                            _string_format_parse_argument_raw ( state , format_specifier , ( u64 ) arg )                             ;break;
             case STRING_FORMAT_SPECIFIER_CHARACTER:                      _string_format_parse_argument_character ( state , format_specifier , ( char ) arg )                      ;break;
             case STRING_FORMAT_SPECIFIER_INTEGER:                        _string_format_parse_argument_integer ( state , format_specifier , ( i64 ) arg )                         ;break;
@@ -3082,6 +3084,7 @@ _string_format_parse_next_argument
             case STRING_FORMAT_SPECIFIER_BOOLEAN_TRUNCATED:              _string_format_parse_argument_boolean_truncated ( state , format_specifier , ( bool ) arg )              ;break;
             case STRING_FORMAT_SPECIFIER_FILE_INFO:                      _string_format_parse_argument_file_info ( state , format_specifier , ( file_t* ) arg )                   ;break;
             case STRING_FORMAT_SPECIFIER_BYTESIZE:                       _string_format_parse_argument_bytesize ( state , format_specifier , ( u64 ) arg )                        ;break;
+            case STRING_FORMAT_SPECIFIER_NESTED:                         _string_format_parse_argument_nested ( state , format_specifier )                                        ;break;
             default:                                                                                                                                                               break;
         }
     }
@@ -4096,7 +4099,7 @@ _string_format_append
 )
 {
     // CASE: Explicit padding not required.
-    if ( format_specifier->modifier.padding.tag == STRING_FORMAT_PADDING_NONE )
+    if ( !format_specifier->modifier.padding.tag )
     {
         // Append the entire source string.
         string_append ( *string , src , src_length );
@@ -4130,7 +4133,7 @@ _string_format_append
     const u64 pad_width = format_specifier->modifier.padding.width - src_length;
 
     // CASE: Left padding required.
-    if ( format_specifier->modifier.padding.tag == STRING_FORMAT_PADDING_LEFT )
+    if ( format_specifier->modifier.padding.alignment == STRING_FORMAT_ALIGNMENT_LEFT )
     {
         u64 pad = pad_width;
         while ( pad )
@@ -4139,7 +4142,7 @@ _string_format_append
 
             // Handle multi-character padding strings with escaped `'`
             // characters.
-            if ( !format_specifier->modifier.padding.wildcard_value )
+            if ( !format_specifier->modifier.padding.value_set_from_wildcard )
             {
                 u64 index_;
                 while ( string_contains ( format_specifier->modifier.padding.value.value + index
@@ -4190,7 +4193,7 @@ _string_format_append
     string_append ( *string , src , src_length );
 
     // CASE: Right padding required.
-    if ( format_specifier->modifier.padding.tag == STRING_FORMAT_PADDING_RIGHT )
+    if ( format_specifier->modifier.padding.alignment == STRING_FORMAT_ALIGNMENT_RIGHT )
     {
         u64 pad = pad_width;
         while ( pad )
@@ -4199,7 +4202,7 @@ _string_format_append
 
             // Handle multi-character padding strings with escaped `'`
             // characters.
-            if ( !format_specifier->modifier.padding.wildcard_value )
+            if ( !format_specifier->modifier.padding.value_set_from_wildcard )
             {
                 u64 index_;
                 while ( string_contains ( format_specifier->modifier.padding.value.value + index
